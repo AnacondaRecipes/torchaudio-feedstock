@@ -37,10 +37,13 @@ requirements:
     
 
 test:
+  source_files:
+    - test
   imports:
     - torchaudio
   commands:
     - pip check
+    - pytest -v test
   requires:
     - pip
 
