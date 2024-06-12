@@ -1,0 +1,55 @@
+{% set name = "torchaudio" %}
+{% set version = "2.1.2" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: 82c2745a73172b495327ec36c6970ad5ad9d5d2ac44feeaea2617152f9393bf7
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  host:
+    - python
+    - setuptools
+    - wheel
+    - pip
+  run:
+    - python
+    # according to compatibility matrix in
+    # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst
+    - pytorch >=2.1.0,<2.2.0
+    
+
+test:
+  imports:
+    - torchaudio
+  commands:
+    - pip check
+  requires:
+    - pip
+
+about:
+  home: https://pytorch.org/audio/stable/index.html
+  summary: Torchaudio is a library for audio and signal processing with PyTorch.
+  description: |
+    The aim of torchaudio is to apply PyTorch to the audio domain. By supporting PyTorch, torchaudio follows the same
+    philosophy of providing strong GPU acceleration, having a focus on trainable features through the autograd system,
+    and having consistent style (tensor names and dimension names). Therefore, it is primarily a machine learning
+    library and not a general signal processing library. The benefits of PyTorch can be seen in torchaudio through
+    having all the computations be through PyTorch operations which makes it easy to use and feel like a natural
+    extension.
+  license: BSD-2-Clause
+  license_file: LICENSE
+  license_family: BSD
+  doc_url: https://pytorch.org/audio/main/torchaudio.html
+  dev_url: https://github.com/pytorch/audio
+
+extra:
+  recipe-maintainers:
+    - boldorider4
