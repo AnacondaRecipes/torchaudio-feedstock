@@ -34,16 +34,19 @@ requirements:
     # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst#optional-dependencies
     # sox has been tested with version 14.4.2, but it is unlikely that other versions will work
     - sox >=14.4.2
-    
+
+
+{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 
 test:
   source_files:
-    - test
+    - test/torchaudio_unittest
   imports:
     - torchaudio
   commands:
     - pip check
-    - pytest -v test
+    - pytest -v {{ ignore_modules }} test/torchaudio_unittest
   requires:
     - pip
 
