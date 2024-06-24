@@ -14,7 +14,7 @@ source:
 build:
   number: 0
   env:
-    - FFMPEG_ROOT = ${PREFIX}
+    - FFMPEG_ROOT=${PREFIX}
   script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
 requirements:
@@ -23,12 +23,16 @@ requirements:
     - make  # [not win]
     - patch     # [not win]
     - m2-patch  # [win]
+    - protobuf
+    - llvm-openmp  # [osx]
+    - intel-openmp  # [not osx and blas_impl == 'mkl']
   host:
     - python
     - setuptools
     - wheel
     - pip
     - pytorch 2.1.0
+    - pybind11
   run:
     - python
     # according to compatibility matrix in
