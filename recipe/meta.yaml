@@ -15,6 +15,7 @@ build:
   number: 0
   env:
     - FFMPEG_ROOT = ${PREFIX}
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
 requirements:
   build:
