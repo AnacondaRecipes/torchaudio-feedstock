@@ -1,0 +1,25 @@
+From 4dec8790db3e1b67f1e5eef2a35fe496f501dfe4 Mon Sep 17 00:00:00 2001
+From: Jack Olivieri <jolivieri@anaconda.com>
+Date: Tue, 25 Jun 2024 21:05:07 +0200
+Subject: [PATCH] require pybind11
+
+---
+ CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a057afb6..5c8fe156 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -144,6 +144,8 @@ if(USE_OPENMP)
+   find_package(OpenMP REQUIRED)
+ endif()
+ 
++find_package(pybind11 REQUIRED)
++
+ # TORCH_CXX_FLAGS contains the same -D_GLIBCXX_USE_CXX11_ABI value as PyTorch
+ if (MSVC)
+   set(warning_flags /W4)
+-- 
+2.39.3 (Apple Git-146)
+
