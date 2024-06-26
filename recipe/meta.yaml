@@ -17,6 +17,11 @@ build:
   env:
     - FFMPEG_ROOT=${PREFIX}
   script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  ignore_run_exports:
+    - pytorch-gpu
+  missing_dso_whitelist:
+    - $RPATH/libc10.dylib
+    - $RPATH/libavcodec.*.dylib
 
 requirements:
   build:
