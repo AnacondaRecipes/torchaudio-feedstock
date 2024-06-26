@@ -34,6 +34,7 @@ requirements:
     - pip
     - pytorch 2.1.0
     - pybind11
+    - libabseil
   run:
     - python
     # according to compatibility matrix in
@@ -44,6 +45,7 @@ requirements:
     # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - ffmpeg >=4.4,<7
+    - libabseil
   run_constrained:
     # according to optional dependencies
     # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst#optional-dependencies
