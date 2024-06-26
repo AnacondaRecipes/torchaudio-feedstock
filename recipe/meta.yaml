@@ -46,6 +46,7 @@ requirements:
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - ffmpeg >=4.4,<7
     - libabseil
+    - protobuf
   run_constrained:
     # according to optional dependencies
     # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst#optional-dependencies
