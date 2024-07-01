@@ -24,6 +24,7 @@ build:
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so  # [osx]
   ignore_run_exports:
     - pytorch-gpu
+    - libprotobuf
   missing_dso_whitelist:
     - $RPATH/libc10.dylib
     # contained in ffmpeg
@@ -70,7 +71,7 @@ requirements:
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - ffmpeg >=4.4,<7
     - libabseil
-    - protobuf
+    - libprotobuf
   run_constrained:
     # according to optional dependencies
     # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst#optional-dependencies
