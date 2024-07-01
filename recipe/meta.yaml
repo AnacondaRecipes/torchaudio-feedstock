@@ -9,9 +9,8 @@ source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 82c2745a73172b495327ec36c6970ad5ad9d5d2ac44feeaea2617152f9393bf7
   patches:
-    - 0001-support-ffmpeg.patch
+    - 0001-support-ffmpeg-and-not-sox.patch
     - 0002-set-include-path.patch
-    - 0003-make-sure-sox-is-not-being-built-or-linked.patch
 
 build:
   number: 0

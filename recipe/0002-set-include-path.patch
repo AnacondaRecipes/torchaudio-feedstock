@@ -1,20 +1,20 @@
-From 4dec8790db3e1b67f1e5eef2a35fe496f501dfe4 Mon Sep 17 00:00:00 2001
+From 3448e0c58d48797d29f785793fd590c5c6c9574f Mon Sep 17 00:00:00 2001
 From: Jack Olivieri <jolivieri@anaconda.com>
-Date: Tue, 25 Jun 2024 21:05:07 +0200
-Subject: [PATCH] set include path
+Date: Mon, 1 Jul 2024 12:30:15 +0200
+Subject: [PATCH 2/2] set include path
 
 ---
  CMakeLists.txt | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a057afb6..5c8fe156 100644
+index a9457700..87ed9180 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -144,6 +144,8 @@ if(USE_OPENMP)
+@@ -146,6 +146,8 @@ if(USE_OPENMP)
    find_package(OpenMP REQUIRED)
  endif()
-
+ 
 +include_directories("$ENV{PREFIX}/include")
 +
  # TORCH_CXX_FLAGS contains the same -D_GLIBCXX_USE_CXX11_ABI value as PyTorch
