@@ -11,6 +11,7 @@ source:
   patches:
     - 0001-support-ffmpeg.patch
     - 0002-set-include-path.patch
+    - 0003-make-sure-sox-is-not-being-built-or-linked.patch
 
 build:
   number: 0
