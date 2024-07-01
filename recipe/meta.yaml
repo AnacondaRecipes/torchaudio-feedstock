@@ -16,12 +16,31 @@ build:
   number: 0
   env:
     - FFMPEG_ROOT=${PREFIX}
-  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  script:
+    - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+    - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg6.so  # [osx]
+    - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg5.so  # [osx]
+    - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg4.so  # [osx]
+    - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so  # [osx]
   ignore_run_exports:
     - pytorch-gpu
   missing_dso_whitelist:
     - $RPATH/libc10.dylib
+    # contained in ffmpeg
+    - $RPATH/libavutil.*.dylib
     - $RPATH/libavcodec.*.dylib
+    - $RPATH/libavformat.*.dylib
+    - $RPATH/libavdevice.*.dylib
+    - $RPATH/libavfilter.*.dylib
+    # libsox shouldn't be activated to begin with
+    - $RPATH/libsox.dylib
+    # in pytorch package
+    - $RPATH/libtorch.dylib
+    - $RPATH/libtorch_cpu.dylib
+    - $RPATH/libtorch_python.dylib
+    # in protobuf package
+    - $RPATH/libprotobuf.*.dylib
+
 
 requirements:
   build:
