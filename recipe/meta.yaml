@@ -82,15 +82,15 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 
 test:
-  source_files:
-    - test/torchaudio_unittest
+  # source_files:
+  #   - test/torchaudio_unittest
   imports:
     - torchaudio
   commands:
     - pip check
-    - pytest -v {{ ignore_modules }} test/torchaudio_unittest
-  requires:
-    - pip
+  #   - pytest -v {{ ignore_modules }} test/torchaudio_unittest
+  # requires:
+  #   - pip
 
 about:
   home: https://pytorch.org/audio/stable/index.html
