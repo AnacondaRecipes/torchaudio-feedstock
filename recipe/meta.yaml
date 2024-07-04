@@ -83,15 +83,21 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 
 test:
-  # source_files:
-  #   - test/torchaudio_unittest
+  source_files:
+    - test/torchaudio_unittest
+    - examples
   imports:
     - torchaudio
   commands:
     - pip check
-  #   - pytest -v {{ ignore_modules }} test/torchaudio_unittest
-  # requires:
-  #   - pip
+    - pip install expecttests dataset kaldi-io
+    - pytest -v {{ ignore_modules }} test/torchaudio_unittest
+  requires:
+    - pip
+    - pytest
+    - parameterized
+    - scipy
+    - numpy <1.24
 
 about:
   home: https://pytorch.org/audio/stable/index.html
