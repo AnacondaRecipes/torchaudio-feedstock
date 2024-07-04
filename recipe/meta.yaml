@@ -23,8 +23,9 @@ build:
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg4.so  # [osx]
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so  # [osx]
   ignore_run_exports:
-    - pytorch-gpu
-    - libprotobuf
+    - pytorch-gpu  # [osx and arm64]
+    - libprotobuf  # [osx and arm64]
+    - libabseil    # [osx and arm64]
   missing_dso_whitelist:
     - $RPATH/libc10.dylib
     # contained in ffmpeg
