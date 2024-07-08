@@ -90,7 +90,8 @@ test:
     - torchaudio
   commands:
     - pip check
-    - pip install expecttests dataset kaldi-io
+    - pip install expecttest dataset kaldi-io
+    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH
     - pytest -v {{ ignore_modules }} test/torchaudio_unittest
   requires:
     - pip
@@ -98,6 +99,7 @@ test:
     - parameterized
     - scipy
     - numpy <1.24
+    - scikit-learn
 
 about:
   home: https://pytorch.org/audio/stable/index.html
