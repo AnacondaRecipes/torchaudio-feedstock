@@ -98,9 +98,10 @@ test:
     - torchaudio
   commands:
     - pip check
-    - pip install expecttest dataset kaldi-io
-    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH
-    - pytest -v {{ ignore_modules }} test/torchaudio_unittest
+    # skipping osx x86_64 tests because of segfaults
+    - pip install expecttest dataset kaldi-io  # [not (osx and x86_64)]
+    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64)]
+    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64)]
   requires:
     - pip
     - pytest
