@@ -83,6 +83,12 @@ requirements:
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 
+# tests to ignore because of unsupported torchaudio function
+{% set tests_to_ignore = "test_rnnt_loss or test_rnnt_loss_0 or test_rnnt_loss_1 or test_rnnt_loss_2 or test_rnnt_loss_basic_backward or test_rnnt_loss_basic_forward_no_grad" %}
+{% set tests_to_ignore = tests_to_ignore + " or test_rnnt_loss_costs_and_gradients_0 or test_rnnt_loss_costs_and_gradients_1 or test_rnnt_loss_costs_and_gradients_2 or test_rnnt_loss_costs_and_gradients_3" %}
+{% set tests_to_ignore = tests_to_ignore + " or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_0 or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_1" %}
+{% set tests_to_ignore = tests_to_ignore + " or test_rnnt_loss_nonfused_softmax or test_rnnt_loss_basic_backward" %}
+
 test:
   source_files:
     - test/torchaudio_unittest
@@ -101,6 +107,7 @@ test:
     - scipy
     - numpy <1.24
     - scikit-learn
+    - pillow
 
 about:
   home: https://pytorch.org/audio/stable/index.html
