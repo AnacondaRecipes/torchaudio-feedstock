@@ -9,15 +9,18 @@ source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 82c2745a73172b495327ec36c6970ad5ad9d5d2ac44feeaea2617152f9393bf7
   patches:
-    - 0001-support-ffmpeg-and-not-sox.patch
-    - 0002-set-include-path.patch
+    - 0001-set-include-path.patch
 
 build:
   number: 0
   skip: True  # [py>311]
-  env:
-    - FFMPEG_ROOT=${PREFIX}
   script:
+    - export USE_FFMPEG=ON          # [not win]
+    - set USE_FFMPEG=ON             # [win]
+    - export BUILD_SOX=OFF          # [not win]
+    - set BUILD_SOX=OFF             # [win]
+    - export FFMPEG_ROOT=${PREFIX}  # [not win]
+    - set FFMPEG_ROOT=${PREFIX}     # [win]
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [osx]
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so         # [osx]
