@@ -28,6 +28,7 @@ build:
     - patchelf --add-rpath '$ORIGIN/../../../..' $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so      # [linux]
     - patchelf --add-rpath '$ORIGIN/../../torch/lib' $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [linux]
     - patchelf --set-rpath '$ORIGIN/../../torch/lib' $SP_DIR/torchaudio/lib/_torchaudio.so         # [linux]
+    - patchelf --add-rpath '$ORIGIN' $SP_DIR/torchaudio/lib/_torchaudio.so                         # [linux]
   ignore_run_exports:
     - pytorch-gpu  # [osx and arm64]
     - libprotobuf  # [osx and arm64]
