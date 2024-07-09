@@ -27,22 +27,34 @@ build:
     - libprotobuf  # [osx and arm64]
     - libabseil    # [osx and arm64]
   missing_dso_whitelist:
-    - $RPATH/libc10.dylib
+    - $RPATH/libc10.dylib           # [osx]
+    - lib/libstdc++.so.*            # [linux]
+    - lib/libgcc_s.so.*             # [linux]
+    - lib/libgomp.so.*              # [linux]
+    - x86_64-conda-linux-gnu/sysroot/lib64/libm.so.*        # [linux and x64_64]
+    - x86_64-conda-linux-gnu/sysroot/lib64/libc.so.*        # [linux and x64_64]
+    - x86_64-conda-linux-gnu/sysroot/lib64/libpthread.so.0  # [linux and x64_64]
     # contained in ffmpeg
-    - $RPATH/libavutil.*.dylib
-    - $RPATH/libavcodec.*.dylib
-    - $RPATH/libavformat.*.dylib
-    - $RPATH/libavdevice.*.dylib
-    - $RPATH/libavfilter.*.dylib
+    - $RPATH/libavutil.*.dylib      # [osx]
+    - $RPATH/libavcodec.*.dylib     # [osx]
+    - $RPATH/libavformat.*.dylib    # [osx]
+    - $RPATH/libavdevice.*.dylib    # [osx]
+    - $RPATH/libavfilter.*.dylib    # [osx]
+    - $RPATH/libavutil.so.*         # [linux]
+    - $RPATH/libc10.so              # [linux]
+    - $RPATH/libavutil.so.*         # [linux]
+    - $RPATH/libavformat.so.*       # [linux]
+    - $RPATH/libavfilter.so.*       # [linux]
     # libsox shouldn't be activated to begin with
-    - $RPATH/libsox.dylib
+    - $RPATH/libsox.dylib           # [osx]
     # in pytorch package
-    - $RPATH/libtorch.dylib
-    - $RPATH/libtorch_cpu.dylib
-    - $RPATH/libtorch_python.dylib
+    - $RPATH/libtorch.dylib         # [osx]
+    - $RPATH/libtorch_cpu.dylib     # [osx]
+    - $RPATH/libtorch_python.dylib  # [osx]
+    - $RPATH/libtorch_cpu.so        # [linux]
+    - $RPATH/libtorch_python.so     # [linux]
     # in protobuf package
-    - $RPATH/libprotobuf.*.dylib
-
+    - $RPATH/libprotobuf.*.dylib    # [osx]
 
 requirements:
   build:
