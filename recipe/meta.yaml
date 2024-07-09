@@ -21,6 +21,7 @@ build:
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [osx]
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so         # [osx]
+    - patchelf --add-path @ORIGIN/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [linux]
   ignore_run_exports:
     - pytorch-gpu  # [osx and arm64]
     - libprotobuf  # [osx and arm64]
@@ -51,6 +52,7 @@ requirements:
     - make  # [not win]
     - patch     # [not win]
     - m2-patch  # [win]
+    - patchelf  # [linux]
     - protobuf {{ libprotobuf }}
     - llvm-openmp  # [osx]
     - intel-openmp  # [not osx and blas_impl == 'mkl']
