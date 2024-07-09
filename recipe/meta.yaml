@@ -34,13 +34,14 @@ build:
     - libprotobuf  # [osx and arm64]
     - libabseil    # [osx and arm64]
   missing_dso_whitelist:
-    - $RPATH/libc10.dylib           # [osx]
     - lib/libstdc++.so.*            # [linux]
     - lib/libgcc_s.so.*             # [linux]
     - lib/libgomp.so.*              # [linux]
+    - $RPATH/ld64.so.1              # [linux and s390x]
     - x86_64-conda-linux-gnu/sysroot/lib64/libm.so.*        # [linux and x64_64]
     - x86_64-conda-linux-gnu/sysroot/lib64/libc.so.*        # [linux and x64_64]
     - x86_64-conda-linux-gnu/sysroot/lib64/libpthread.so.0  # [linux and x64_64]
+    - s390x-conda-linux-gnu/sysroot/lib64/libc.so.*         # [linux and s390x]
     # contained in ffmpeg
     - $RPATH/libavutil.*.dylib      # [osx]
     - $RPATH/libavcodec.*.dylib     # [osx]
@@ -60,6 +61,7 @@ build:
     - $RPATH/libtorch_python.dylib  # [osx]
     - $RPATH/libtorch_cpu.so        # [linux]
     - $RPATH/libtorch_python.so     # [linux]
+    - $RPATH/libc10.dylib           # [osx]
     # in protobuf package
     - $RPATH/libprotobuf.*.dylib    # [osx]
 
