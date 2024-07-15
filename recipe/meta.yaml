@@ -15,7 +15,6 @@ build:
   number: 0
   skip: True  # [py>311]
   # temporarily skip windows until ffmpeg is available
-  skip: True  # [win]
   script:
     - export USE_FFMPEG=ON          # [not win]
     - set USE_FFMPEG=ON             # [win]
