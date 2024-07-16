@@ -1,3 +1,4 @@
 channels:
   - http://staging.continuum.io/prefect/fs/ffmpeg-feedstock/pr5/21de5c8
   - http://staging.continuum.io/prefect/fs/ffmpeg-feedstock/pr5/18b69ce
+aggregate_check: false

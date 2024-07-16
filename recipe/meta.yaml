@@ -14,6 +14,7 @@ source:
 build:
   number: 0
   skip: True  # [py>311]
+  skip: True  # [not win]
   # temporarily skip windows until ffmpeg is available
   script:
     - export USE_FFMPEG=ON          # [not win]
@@ -21,7 +22,7 @@ build:
     - export BUILD_SOX=OFF          # [not win]
     - set BUILD_SOX=OFF             # [win]
     - export FFMPEG_ROOT=${PREFIX}  # [not win]
-    - set FFMPEG_ROOT=${PREFIX}     # [win]
+    - set FFMPEG_ROOT=%PREFIX%      # [win]
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [osx]
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so         # [osx]
