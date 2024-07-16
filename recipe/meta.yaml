@@ -8,8 +8,8 @@ package:
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 82c2745a73172b495327ec36c6970ad5ad9d5d2ac44feeaea2617152f9393bf7
-  patches:
-    - 0001-set-include-path.patch
+  # patches:
+  #   - 0001-set-include-path.patch
 
 build:
   number: 0
@@ -23,6 +23,8 @@ build:
     - set BUILD_SOX=OFF             # [win]
     - export FFMPEG_ROOT=${PREFIX}  # [not win]
     - set FFMPEG_ROOT=%PREFIX%      # [win]
+    - export CMAKE_INCLUDE_PATH="${PREFIX}/include"  # [not win]
+    - set CMAKE_INCLUDE_PATH=%INCLUDE_INC%           # [win]
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [osx]
     - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so         # [osx]
