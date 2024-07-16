@@ -14,60 +14,12 @@ source:
 build:
   number: 0
   skip: True  # [py>311]
-  skip: True  # [not win]
-  # temporarily skip windows until ffmpeg is available
   script:
     - export USE_FFMPEG=ON          # [not win]
     - set USE_FFMPEG=ON             # [win]
     - export BUILD_SOX=OFF          # [not win]
     - set BUILD_SOX=OFF             # [win]
-    - export FFMPEG_ROOT=${PREFIX}  # [not win]
-    - set FFMPEG_ROOT=%PREFIX%      # [win]
-    - export CMAKE_INCLUDE_PATH="${PREFIX}/include"  # [not win]
-    - set CMAKE_INCLUDE_PATH=%INCLUDE_INC%           # [win]
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
-    - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [osx]
-    - install_name_tool -add_rpath @loader_path/ $SP_DIR/torchaudio/lib/_torchaudio.so         # [osx]
-    - patchelf --set-rpath '$ORIGIN' $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so                  # [linux]
-    - patchelf --add-rpath '$ORIGIN/../../../..' $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so      # [linux]
-    - patchelf --add-rpath '$ORIGIN/../../torch/lib' $SP_DIR/torchaudio/lib/_torchaudio_ffmpeg.so  # [linux]
-    - patchelf --set-rpath '$ORIGIN/../../torch/lib' $SP_DIR/torchaudio/lib/_torchaudio.so         # [linux]
-    - patchelf --add-rpath '$ORIGIN' $SP_DIR/torchaudio/lib/_torchaudio.so                         # [linux]
-  ignore_run_exports:
-    - pytorch-gpu  # [osx and arm64]
-    - libprotobuf  # [osx and arm64]
-    - libabseil    # [osx and arm64]
-  missing_dso_whitelist:
-    - lib/libstdc++.so.*            # [linux]
-    - lib/libgcc_s.so.*             # [linux]
-    - lib/libgomp.so.*              # [linux]
-    - $RPATH/ld64.so.1              # [linux and s390x]
-    - x86_64-conda-linux-gnu/sysroot/lib64/libm.so.*        # [linux and x64_64]
-    - x86_64-conda-linux-gnu/sysroot/lib64/libc.so.*        # [linux and x64_64]
-    - x86_64-conda-linux-gnu/sysroot/lib64/libpthread.so.0  # [linux and x64_64]
-    - s390x-conda-linux-gnu/sysroot/lib64/libc.so.*         # [linux and s390x]
-    # contained in ffmpeg
-    - $RPATH/libavutil.*.dylib      # [osx]
-    - $RPATH/libavcodec.*.dylib     # [osx]
-    - $RPATH/libavformat.*.dylib    # [osx]
-    - $RPATH/libavdevice.*.dylib    # [osx]
-    - $RPATH/libavfilter.*.dylib    # [osx]
-    - $RPATH/libavutil.so.*         # [linux]
-    - $RPATH/libc10.so              # [linux]
-    - $RPATH/libavutil.so.*         # [linux]
-    - $RPATH/libavformat.so.*       # [linux]
-    - $RPATH/libavfilter.so.*       # [linux]
-    # libsox shouldn't be activated to begin with
-    - $RPATH/libsox.dylib           # [osx]
-    # in pytorch package
-    - $RPATH/libtorch.dylib         # [osx]
-    - $RPATH/libtorch_cpu.dylib     # [osx]
-    - $RPATH/libtorch_python.dylib  # [osx]
-    - $RPATH/libtorch_cpu.so        # [linux]
-    - $RPATH/libtorch_python.so     # [linux]
-    - $RPATH/libc10.dylib           # [osx]
-    # in protobuf package
-    - $RPATH/libprotobuf.*.dylib    # [osx]
 
 requirements:
   build:
@@ -122,7 +74,7 @@ requirements:
 
 test:
   source_files:
-    - test/torchaudio_unittest
+    - test
     - examples
   imports:
     - torchaudio
@@ -131,10 +83,12 @@ test:
     # skipping osx x86_64 tests because of segfaults
     - pip install expecttest dataset kaldi-io  # [not (osx and x86_64)]
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64)]
+    - python test/smoke_test/smoke_test.py
     - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64)]
   requires:
     - pip
     - pytest
+    - typing
     - parameterized
     - scipy
     - numpy <1.24
