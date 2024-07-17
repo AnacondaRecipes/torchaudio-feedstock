@@ -1,5 +1,5 @@
 channels:
-  - http://staging.continuum.io/prefect/fs/ffmpeg-feedstock/pr5/18b69ce
+  - https://staging.continuum.io/prefect/fs/ffmpeg-feedstock/pr5/940a3b1
 aggregate_check: false
 # disable overlinking checks
 build_parameters:
