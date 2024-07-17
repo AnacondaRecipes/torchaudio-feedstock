@@ -46,7 +46,6 @@ requirements:
     - pip
     - pytorch 2.1.0
     - pybind11
-    - libabseil
     - ffmpeg 6.1.1
   run:
     - python
@@ -57,7 +56,7 @@ requirements:
     # https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#optional-dependencies
     # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
-    - ffmpeg >=4.4,<7
+    - {{ pin_compatible('ffmpeg')}}
     # this is not officially required but it is suggested in some upstream build examples and allows the correct library to be used 
     - libprotobuf <4.21.0
   run_constrained:
@@ -65,18 +64,6 @@ requirements:
     # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst#optional-dependencies
     # sox has been tested with version 14.4.2, but it is unlikely that other versions will work
     - sox >=14.4.2
-
-
-{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
-{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
-
-# tests to ignore because of unsupported torchaudio function
-{% set tests_to_ignore = "test_rnnt_loss or test_rnnt_loss_0 or test_rnnt_loss_1 or test_rnnt_loss_2 or test_rnnt_loss_basic_backward or test_rnnt_loss_basic_forward_no_grad" %}
-{% set tests_to_ignore = tests_to_ignore + " or test_rnnt_loss_costs_and_gradients_0 or test_rnnt_loss_costs_and_gradients_1 or test_rnnt_loss_costs_and_gradients_2 or test_rnnt_loss_costs_and_gradients_3" %}
-{% set tests_to_ignore = tests_to_ignore + " or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_0 or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_1" %}
-{% set tests_to_ignore = tests_to_ignore + " or test_rnnt_loss_nonfused_softmax or test_rnnt_loss_basic_backward" %}
-# tests to ignore because of unexpected argument to load() function
-{% set tests_to_ignore = tests_to_ignore + " or test_tedlium_release1_path or test_tedlium_release1_str or test_tedlium_release2 or test_tedlium_release3" %}
 
 test:
   source_files:
