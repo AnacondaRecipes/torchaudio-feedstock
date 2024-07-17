@@ -20,7 +20,7 @@ build:
     - export BUILD_SOX=OFF          # [not win]
     - set BUILD_SOX=OFF             # [win]
     - export FFMPEG_ROOT=${PREFIX}  # [not win]
-    - set FFMPEG_ROOT=%PREFIX%      # [win]
+    - set FFMPEG_ROOT=%LIBRARY_PREFIX%      # [win]
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
 requirements:
@@ -87,7 +87,8 @@ test:
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     - python test/smoke_test/smoke_test.py
-    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64)]
+    # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
+    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
   requires:
     - pip
     - pytest
