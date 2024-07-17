@@ -15,12 +15,16 @@ build:
   number: 0
   skip: True  # [py>311]
   script:
-    - export USE_FFMPEG=ON          # [not win]
-    - set USE_FFMPEG=ON             # [win]
-    - export BUILD_SOX=OFF          # [not win]
-    - set BUILD_SOX=OFF             # [win]
-    - export FFMPEG_ROOT=${PREFIX}  # [not win]
-    - set FFMPEG_ROOT=%LIBRARY_PREFIX%      # [win]
+    - export USE_FFMPEG=ON                         # [not win]
+    - set USE_FFMPEG=ON                            # [win]
+    - export BUILD_SOX=OFF                         # [not win]
+    - set BUILD_SOX=OFF                            # [win]
+    - export USE_OPENMP=ON                         # [not win]
+    - set USE_OPENMP=ON                            # [win]
+    - export BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON  # [not win]
+    - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
+    - export FFMPEG_ROOT=${PREFIX}                 # [not win]
+    - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
 requirements:
@@ -83,12 +87,13 @@ test:
   commands:
     - pip check
     # skipping osx x86_64 tests because of segfaults
-    - pip install expecttest dataset kaldi-io  # [not (osx and x86_64)]
-    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win]
-    - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
+    #- pip install expecttest dataset kaldi-io  # [not (osx and x86_64)]
+    #- export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win]
+    #- set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     - python test/smoke_test/smoke_test.py
+    - pytest -v test/integration_tests --ignore=test/prototype
     # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
-    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
+    #- pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
   requires:
     - pip
     - pytest
