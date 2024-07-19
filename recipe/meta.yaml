@@ -89,6 +89,9 @@ requirements:
 
 test:
   source_files:
+  {% if run_unittests %}
+    - test/torchaudio_unittest
+  {% endif %}
     - test/smoke_test
     - test/integration_tests
     - examples
