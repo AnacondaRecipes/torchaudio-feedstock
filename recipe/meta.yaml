@@ -1,5 +1,6 @@
 {% set name = "torchaudio" %}
 {% set version = "2.1.2" %}
+{% set run_unittests = "false" %}
 
 package:
   name: {{ name|lower }}
@@ -76,6 +77,16 @@ requirements:
 # test to skip because of missing dependency
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/tacotron2_pipeline_test.py" %}
 
+{% if run_unittests %}
+# tests to ignore because of unsupported torchaudio function
+{% set tests_to_skip = "test_rnnt_loss or test_rnnt_loss_0 or test_rnnt_loss_1 or test_rnnt_loss_2 or test_rnnt_loss_basic_backward or test_rnnt_loss_basic_forward_no_grad" %}
+{% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_costs_and_gradients_0 or test_rnnt_loss_costs_and_gradients_1 or test_rnnt_loss_costs_and_gradients_2 or test_rnnt_loss_costs_and_gradients_3" %}
+{% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_0 or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_1" %}
+{% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_nonfused_softmax or test_rnnt_loss_basic_backward" %}
+# tests to ignore because of unexpected argument to load() function
+{% set tests_to_skip = tests_to_skip + " or test_tedlium_release1_path or test_tedlium_release1_str or test_tedlium_release2 or test_tedlium_release3" %}
+{% endif %}
+
 test:
   source_files:
     - test/smoke_test
@@ -87,12 +98,14 @@ test:
     - pip check
     # skipping osx x86_64 tests because of segfaults
     #- pip install expecttest dataset kaldi-io  # [not (osx and x86_64)]
-    #- export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win]
-    #- set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     - python test/smoke_test/smoke_test.py
     - pytest -v {{ ignore_modules }} test/integration_tests
+    {% if run_unittests %}
+    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win and not s390x]
+    - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
-    #- pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
+    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
+    {% endif %}
   requires:
     - pip
     - pytest
@@ -102,6 +115,12 @@ test:
     - numpy <1.24
     - scikit-learn
     - pillow
+    {% if run_unittests %}
+    - expecttest
+    - dataset
+    - kaldi-io
+    {% endif %}
+
 
 about:
   home: https://pytorch.org/audio/stable/index.html
