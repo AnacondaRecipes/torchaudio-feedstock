@@ -65,9 +65,11 @@ requirements:
     # sox has been tested with version 14.4.2, but it is unlikely that other versions will work
     - sox >=14.4.2
 
-
+# ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
+# these tests import torchaudio.prototype which does not exist in main module
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/prototype" %}
 
 # # tests to ignore because of unsupported torchaudio function
 # {% set tests_to_ignore = "test_rnnt_loss or test_rnnt_loss_0 or test_rnnt_loss_1 or test_rnnt_loss_2 or test_rnnt_loss_basic_backward or test_rnnt_loss_basic_forward_no_grad" %}
