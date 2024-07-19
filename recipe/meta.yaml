@@ -58,7 +58,7 @@ requirements:
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - ffmpeg >=6,<7
     # this is not officially required but it is suggested in some upstream build examples and allows the correct library to be used 
-    - libprotobuf <4.21.0
+    #- libprotobuf <4.21.0
   run_constrained:
     # according to optional dependencies
     # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst#optional-dependencies
