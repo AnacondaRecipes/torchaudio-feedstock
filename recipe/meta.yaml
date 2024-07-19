@@ -66,8 +66,8 @@ requirements:
     - sox >=14.4.2
 
 
-# {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
-# {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
+{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 
 # # tests to ignore because of unsupported torchaudio function
 # {% set tests_to_ignore = "test_rnnt_loss or test_rnnt_loss_0 or test_rnnt_loss_1 or test_rnnt_loss_2 or test_rnnt_loss_basic_backward or test_rnnt_loss_basic_forward_no_grad" %}
@@ -79,7 +79,8 @@ requirements:
 
 test:
   source_files:
-    - test
+    - test/smoke_test
+    - test/integration_tests
     - examples
   imports:
     - torchaudio
@@ -90,7 +91,7 @@ test:
     #- export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win]
     #- set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     - python test/smoke_test/smoke_test.py
-    - pytest -v test/integration_tests --ignore=test/prototype
+    - pytest -v {{ ignore_modules }} test/integration_tests
     # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
     #- pytest -v {{ ignore_modules }} -k "not ({{ tests_to_ignore }})" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
   requires:
