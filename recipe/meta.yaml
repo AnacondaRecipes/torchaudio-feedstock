@@ -60,11 +60,6 @@ requirements:
     - ffmpeg >=6,<7
     # this is not officially required but it is suggested in some upstream build examples and allows the correct library to be used 
     #- libprotobuf <4.21.0
-  run_constrained:
-    # according to optional dependencies
-    # https://github.com/pytorch/audio/blob/main/docs/source/installation.rst#optional-dependencies
-    # sox has been tested with version 14.4.2, but it is unlikely that other versions will work
-    - sox >=14.4.2
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
