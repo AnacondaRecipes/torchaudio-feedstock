@@ -68,6 +68,9 @@ requirements:
 # test to skip because of missing dependency
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/tacotron2_pipeline_test.py" %}
 
+# skipping this test because of URL errors on osx-64
+{% set integration_tests_to_skip = "test_loudness" %}  # [osx and x86_64]
+
 {% if run_unittests %}
 # tests to ignore because of unsupported torchaudio function
 {% set tests_to_skip = "test_rnnt_loss or test_rnnt_loss_0 or test_rnnt_loss_1 or test_rnnt_loss_2 or test_rnnt_loss_basic_backward or test_rnnt_loss_basic_forward_no_grad" %}
@@ -93,7 +96,8 @@ test:
     # skipping osx x86_64 tests because of segfaults
     #- pip install expecttest dataset kaldi-io  # [not (osx and x86_64)]
     - python test/smoke_test/smoke_test.py
-    - pytest -v {{ ignore_modules }} test/integration_tests
+    - pytest -v {{ ignore_modules }} test/integration_tests  # [not (osx and x86_64)]
+    - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests  # [osx and x86_64]
     {% if run_unittests %}
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win and not s390x]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
