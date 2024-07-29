@@ -25,6 +25,16 @@ build:
     - export FFMPEG_ROOT=${PREFIX}                 # [not win]
     - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  missing_dso_whitelist:
+    - "**/libc10.so"                # [linux]
+    - "**/libtorch_cpu.so"          # [linux]
+    - "**/libtorch_python.so"       # [linux]
+    - "**/libtorchaudio_ffmpeg.so"  # [linux or osx]
+    - "**/libtorchaudio.so"         # [linux or osx]
+    - "**/ld64.so.1"                # [s390x]
+    - "**/libc10.dylib"             # [osx]
+    - "**/libtorch_cpu.dylib"       # [osx]
+    - "**/libtorch_python.dylib"    # [linux]
 
 requirements:
   build:
@@ -33,6 +43,7 @@ requirements:
     - cmake
     - make  # [not win]
     - patchelf  # [linux]
+    # TODO is this right?
     - protobuf {{ libprotobuf }}
     - llvm-openmp  # [osx]
     - intel-openmp  # [not osx and blas_impl == 'mkl']
@@ -55,6 +66,7 @@ requirements:
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - {{ pin_compatible('ffmpeg') }}
     # protobuf is necessary because it's loaded at runtime from torchaudio/_extension/__init__.py:45: _load_lib("libtorchaudio")
+    # TODO why pinning?
     - libprotobuf <4.21.0
 
 # ignoring sox tests because we don't integrate sox
