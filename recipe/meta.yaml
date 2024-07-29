@@ -61,13 +61,13 @@ requirements:
 # these tests import torchaudio.prototype which does not exist in main module
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/prototype --ignore=test/integration_tests/rnnt_pipeline_test.py" %}
 
-# test to skip because of missing deep-phonemizer
+# test to skip because of missing flashlight-text
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/ctc_decoder_integration_test.py" %}
-# test to skip because of missing dependency
+# test to skip because of missing dependency deep-phonemizer
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/tacotron2_pipeline_test.py" %}
 
-# skipping this test because of URL errors on osx-64
-{% set integration_tests_to_skip = "test_loudness" %}  # [osx and x86_64]
+# skipping this test because of URL errors on osx (these are passing locally though)
+{% set integration_tests_to_skip = "test_loudness" %}  # [osx]
 
 {% if run_unittests %}
 # tests to ignore because of unsupported torchaudio function
