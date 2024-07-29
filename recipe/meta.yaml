@@ -43,7 +43,7 @@ requirements:
     - pip
     - pytorch 2.1.0
     - pybind11
-    - ffmpeg >=6,<7
+    - ffmpeg 6.1.1
   run:
     - python
     # according to compatibility matrix in
@@ -53,9 +53,7 @@ requirements:
     # https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#optional-dependencies
     # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
-    - ffmpeg >=6,<7
-    # this is not officially required but it is suggested in some upstream build examples and allows the correct library to be used 
-    #- libprotobuf <4.21.0
+    - {{ pin_compatible('ffmpeg') }}
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
