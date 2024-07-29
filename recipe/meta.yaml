@@ -77,8 +77,6 @@ requirements:
 {% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_costs_and_gradients_0 or test_rnnt_loss_costs_and_gradients_1 or test_rnnt_loss_costs_and_gradients_2 or test_rnnt_loss_costs_and_gradients_3" %}
 {% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_0 or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_1" %}
 {% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_nonfused_softmax or test_rnnt_loss_basic_backward" %}
-# tests to ignore because of unexpected argument to load() function
-{% set tests_to_skip = tests_to_skip + " or test_tedlium_release1_path or test_tedlium_release1_str or test_tedlium_release2 or test_tedlium_release3" %}
 {% endif %}
 
 test:
