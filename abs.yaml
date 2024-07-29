@@ -1,6 +1,2 @@
-channels:
-  - https://staging.continuum.io/prefect/fs/ffmpeg-feedstock/pr5/940a3b1
-aggregate_check: false
-# disable overlinking checks
-build_parameters:
-  - ""
+upload_channels:
+  - sfe1ed40
