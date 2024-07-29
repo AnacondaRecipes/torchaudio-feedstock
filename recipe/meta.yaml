@@ -54,6 +54,8 @@ requirements:
     # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - {{ pin_compatible('ffmpeg') }}
+    # protobuf is necessary because it's loaded at runtime from torchaudio/_extension/__init__.py:45: _load_lib("libtorchaudio")
+    - libprotobuf <4.21.0
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
