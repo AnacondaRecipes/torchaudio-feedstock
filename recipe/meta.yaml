@@ -37,6 +37,8 @@ build:
     - "**/libtorch_python.dylib"    # [osx]
     - "**/torch_cpu.dll"            # [win]
     - "**/c10.dll"                  # [win]
+    # because of pytorch --> _openmp_mutex --> libgomp
+    - "**/lib/libgomp.so.*"         # [linux]
 
 requirements:
   build:
