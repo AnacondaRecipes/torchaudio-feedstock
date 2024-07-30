@@ -34,7 +34,9 @@ build:
     - "**/ld64.so.1"                # [s390x]
     - "**/libc10.dylib"             # [osx]
     - "**/libtorch_cpu.dylib"       # [osx]
-    - "**/libtorch_python.dylib"    # [linux]
+    - "**/libtorch_python.dylib"    # [osx]
+    - "**/torch_cpu.dll"            # [win]
+    - "**/c10.dll"                  # [win]
 
 requirements:
   build:
