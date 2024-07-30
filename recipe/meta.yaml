@@ -78,7 +78,7 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/tacotron2_pipeline_test.py" %}
 
 # skipping this test because of URL errors on osx (these are passing locally though)
-{% set integration_tests_to_skip = "test_loudness" %}  # [osx]
+{% set ignore_modules_osx = " --ignore=test/integration_tests/loudness_compliance_test.py" %}  # [osx]
 
 {% if run_unittests %}
 # tests to ignore because of unsupported torchaudio function
@@ -102,8 +102,8 @@ test:
     - pip check
     # skipping osx x86_64 tests because of segfaults
     - python test/smoke_test/smoke_test.py
-    - pytest -v {{ ignore_modules }} test/integration_tests  # [not (osx and x86_64)]
-    - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests  # [osx and x86_64]
+    - pytest -v {{ ignore_modules }} test/integration_tests  # [not osx]
+    - pytest -v {{ ignore_modules }} {{ ignore_modules_osx }} test/integration_tests  # [osx]
     {% if run_unittests %}
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win and not s390x]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
