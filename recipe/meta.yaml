@@ -9,6 +9,8 @@ package:
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 82c2745a73172b495327ec36c6970ad5ad9d5d2ac44feeaea2617152f9393bf7
+  patches:
+    - 0001-find-intel-openmp.patch
 
 build:
   number: 0
@@ -25,9 +27,7 @@ build:
     - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
     - export FFMPEG_ROOT=${PREFIX}                 # [not win]
     - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
-    #- export OpenMP_CXX_FLAGS="-I${PREFIX}/include"
-    - export OpenMP_CXX_LIB_NAMES="iomp"
-    - export OpenMP_omp_LIBRARY="${PREFIX}/lib/libiomp5.so"
+    - export CMAKE_PREFIX_PATH=$PREFIX
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   missing_dso_whitelist:
     - "**/libc10.so"                # [linux]
@@ -52,6 +52,7 @@ requirements:
     - cmake
     - make  # [not win]
     - patchelf  # [linux]
+    - patch
   host:
     - python
     - setuptools
