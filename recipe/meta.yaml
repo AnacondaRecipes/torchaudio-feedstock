@@ -93,7 +93,6 @@ test:
     - torchaudio
   commands:
     - pip check
-    # skipping osx x86_64 tests because of segfaults
     - python test/smoke_test/smoke_test.py
     - pytest -v {{ ignore_modules }} test/integration_tests
     {% if run_unittests %}
