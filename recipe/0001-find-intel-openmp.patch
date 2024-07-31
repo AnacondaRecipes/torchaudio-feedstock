@@ -17,12 +17,12 @@ Index: audio/CMakeLists.txt
 Index: audio/tools/setup_helpers/extension.py
 ===================================================================
 --- audio.orig/tools/setup_helpers/extension.py	2024-07-16 11:46:22.276593547 -0500
-+++ audio/tools/setup_helpers/extension.py	2024-07-31 15:53:43.696019549 -0500
++++ audio/tools/setup_helpers/extension.py	2024-07-31 15:59:07.086534691 -0500
 @@ -137,6 +137,7 @@
              f"-DUSE_CUDA:BOOL={'ON' if _USE_CUDA else 'OFF'}",
              f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
              f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
-+            f"-DPREFIX='{PREFIX}'",
++            f"-DPREFIX={os.environ.get('PREFIX')}",
          ]
          build_args = ["--target", "install"]
          # Pass CUDA architecture to cmake
