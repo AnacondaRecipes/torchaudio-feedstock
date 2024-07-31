@@ -15,8 +15,8 @@ source:
 
 build:
   number: 0
+  # See above compatibility matrix
   skip: True  # [py>311]
-  skip: True  # [not (linux and x86_64)]
   script:
     - export USE_FFMPEG=ON                         # [not win]
     - set USE_FFMPEG=ON                            # [win]
