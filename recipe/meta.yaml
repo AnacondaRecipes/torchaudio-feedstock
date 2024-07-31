@@ -13,6 +13,7 @@ source:
 build:
   number: 0
   skip: True  # [py>311]
+  skip: True  # [not (linux and x86_64)]
   script:
     - export USE_FFMPEG=ON                         # [not win]
     - set USE_FFMPEG=ON                            # [win]
@@ -38,6 +39,8 @@ build:
     - "**/torch_cpu.dll"            # [win]
     - "**/c10.dll"                  # [win]
     - "**/torch_python.dll"         # [win]
+  ignore_run_exports:
+    - libgomp
 
 requirements:
   build:
