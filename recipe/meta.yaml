@@ -27,7 +27,6 @@ build:
     - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
     - export FFMPEG_ROOT=${PREFIX}                 # [not win]
     - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
-    - export CMAKE_PREFIX_PATH=$PREFIX
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   missing_dso_whitelist:
     - "**/libc10.so"                # [linux]
