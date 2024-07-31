@@ -82,14 +82,6 @@ requirements:
 # skipping this test because of URL errors on osx (these are passing locally though)
 {% set ignore_modules_osx = " --ignore=test/integration_tests/loudness_compliance_test.py" %}  # [osx]
 
-{% if run_unittests %}
-# tests to ignore because of unsupported torchaudio function
-{% set tests_to_skip = "test_rnnt_loss or test_rnnt_loss_0 or test_rnnt_loss_1 or test_rnnt_loss_2 or test_rnnt_loss_basic_backward or test_rnnt_loss_basic_forward_no_grad" %}
-{% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_costs_and_gradients_0 or test_rnnt_loss_costs_and_gradients_1 or test_rnnt_loss_costs_and_gradients_2 or test_rnnt_loss_costs_and_gradients_3" %}
-{% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_0 or test_rnnt_loss_costs_and_gradients_random_data_with_numpy_fp32_1" %}
-{% set tests_to_skip = tests_to_skip + " or test_rnnt_loss_nonfused_softmax or test_rnnt_loss_basic_backward" %}
-{% endif %}
-
 test:
   source_files:
   {% if run_unittests %}
