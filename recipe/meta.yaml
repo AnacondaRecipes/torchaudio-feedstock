@@ -96,10 +96,13 @@ test:
     - python test/smoke_test/smoke_test.py
     - pytest -v {{ ignore_modules }} test/integration_tests
     {% if run_unittests %}
+    # dataset provides the dataset for the hubert example test. It's not a runtime requirement.
+    - pip install dataset
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win and not s390x]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
-    - pytest -v {{ ignore_modules }} test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
+    # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
+    - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
     {% endif %}
   requires:
     - pip
@@ -110,11 +113,7 @@ test:
     - numpy <1.24
     - scikit-learn
     - pillow
-    {% if run_unittests %}
     - expecttest
-    - dataset
-    - kaldi-io
-    {% endif %}
 
 
 about:
