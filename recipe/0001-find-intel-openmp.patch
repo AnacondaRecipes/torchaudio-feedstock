@@ -1,14 +1,12 @@
 Index: audio/CMakeLists.txt
 ===================================================================
 --- audio.orig/CMakeLists.txt	2024-07-31 15:21:46.211818770 -0500
-+++ audio/CMakeLists.txt	2024-07-31 15:54:16.241535324 -0500
-@@ -141,6 +141,11 @@
++++ audio/CMakeLists.txt	2024-07-31 16:08:11.386149697 -0500
+@@ -141,6 +141,9 @@
  endif()
  
  if(USE_OPENMP)
-+  set(OpenMP_CXX_FLAGS "-I${PREFIX}/include")
 +  set(OpenMP_CXX_LIB_NAMES "iomp5")
-+  set(OpenMP_C_FLAGS "-I${PREFIX}/include")
 +  set(OpenMP_C_LIB_NAMES "iomp5")
 +  set(OpenMP_iomp5_LIBRARY "${PREFIX}/lib/libiomp5.so")
    find_package(OpenMP REQUIRED)
