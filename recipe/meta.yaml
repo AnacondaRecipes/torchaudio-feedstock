@@ -46,8 +46,6 @@ requirements:
     - cmake
     - make  # [not win]
     - patchelf  # [linux]
-    - llvm-openmp  # [osx]
-    - intel-openmp  # [not osx and blas_impl == 'mkl']
   host:
     - python
     - setuptools
@@ -56,6 +54,8 @@ requirements:
     - pytorch 2.1.0
     - pybind11
     - ffmpeg 6.1.1
+    - llvm-openmp  # [osx]
+    - intel-openmp  # [not osx and blas_impl == 'mkl']
   run:
     - python
     # according to compatibility matrix in
