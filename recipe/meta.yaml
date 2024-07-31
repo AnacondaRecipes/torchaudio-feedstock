@@ -25,6 +25,9 @@ build:
     - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
     - export FFMPEG_ROOT=${PREFIX}                 # [not win]
     - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
+    #- export OpenMP_CXX_FLAGS="-I${PREFIX}/include"
+    - export OpenMP_CXX_LIB_NAMES="iomp"
+    - export OpenMP_omp_LIBRARY="${PREFIX}/lib/libiomp5.so"
     - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   missing_dso_whitelist:
     - "**/libc10.so"                # [linux]
@@ -71,7 +74,7 @@ requirements:
     - {{ pin_compatible('ffmpeg') }}
     # because of pytorch --> _openmp_mutex
     # it should be in the run_export being a host dependency of pytorch, but strangely this is not found by
-    - _openmp_mutex  # [linux]
+   # - _openmp_mutex  # [linux]
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
