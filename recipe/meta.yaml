@@ -1,6 +1,9 @@
 {% set name = "torchaudio" %}
-{% set version = "2.1.2" %}
+{% set version = "2.1.0" %}
 {% set run_unittests = False %}
+# Torchaudio and PyTorch are tightly coupled in terms of versions.
+# see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
+{% set compatible_pytorch = "2.1.0" %}
 
 package:
   name: {{ name|lower }}
@@ -8,9 +11,7 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 82c2745a73172b495327ec36c6970ad5ad9d5d2ac44feeaea2617152f9393bf7
-  patches:
-    - 0001-find-intel-openmp.patch
+  sha256: 42e3771c8834266de46b19202a36f8db47eb1bb04ac30e8097aa07843f608fcc
 
 build:
   number: 0
@@ -21,7 +22,11 @@ build:
     - set USE_FFMPEG=ON                            # [win]
     - export BUILD_SOX=OFF                         # [not win]
     - set BUILD_SOX=OFF                            # [win]
-    - export USE_OPENMP=ON                         # [not win]
+    # On linux, Torchaudio's build system will find gnu openmp preferentially to other openmp implementations,
+    # and we can't keep gnu openmp out of the host environment due to issues with our openmp packages.
+    # That could lead to conflicts with other packages. Turn it off for linux.
+    - export USE_OPENMP=OFF                        # [linux]
+    - export USE_OPENMP=ON                         # [osx]
     - set USE_OPENMP=ON                            # [win]
     - export BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON  # [not win]
     - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
@@ -41,54 +46,38 @@ build:
     - "**/torch_cpu.dll"            # [win]
     - "**/c10.dll"                  # [win]
     - "**/torch_python.dll"         # [win]
-  ignore_run_exports:
-    - libgomp
 
 requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('c') }}
     - cmake
-    - make  # [not win]
+    - make      # [not win]
     - patchelf  # [linux]
-    - patch
   host:
     - python
     - setuptools
     - wheel
     - pip
-    - pytorch 2.1.0
-    - pybind11
+    - pytorch {{ compatible_pytorch }}
+    - pybind11 2.12.0
     - ffmpeg 6.1.1
     - llvm-openmp  # [osx]
-    - intel-openmp  # [not osx and blas_impl == 'mkl']
   run:
     - python
-    # according to compatibility matrix in
-    # https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
-    - pytorch >=2.1.0,<2.2.0
-    # according to optional dependencies
-    # https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#optional-dependencies
-    # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
-    # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
-    - {{ pin_compatible('ffmpeg') }}
-    # because of pytorch --> _openmp_mutex
-    # it should be in the run_export being a host dependency of pytorch, but strangely this is not found by
-   # - _openmp_mutex  # [linux]
+    - pytorch {{ compatible_pytorch }}
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 # these tests import torchaudio.prototype which does not exist in main module
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/prototype --ignore=test/integration_tests/rnnt_pipeline_test.py" %}
-
 # test to skip because of missing flashlight-text
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/ctc_decoder_integration_test.py" %}
 # test to skip because of missing dependency deep-phonemizer
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/tacotron2_pipeline_test.py" %}
-
 # skipping this test because of URL errors on osx (these are passing locally though)
-{% set ignore_modules_osx = " --ignore=test/integration_tests/loudness_compliance_test.py" %}  # [osx]
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/loudness_compliance_test.py" %}  # [osx]
 
 test:
   source_files:
@@ -104,8 +93,7 @@ test:
     - pip check
     # skipping osx x86_64 tests because of segfaults
     - python test/smoke_test/smoke_test.py
-    - pytest -v {{ ignore_modules }} test/integration_tests  # [not osx]
-    - pytest -v {{ ignore_modules }} {{ ignore_modules_osx }} test/integration_tests  # [osx]
+    - pytest -v {{ ignore_modules }} test/integration_tests
     {% if run_unittests %}
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win and not s390x]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
