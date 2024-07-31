@@ -1,6 +1,6 @@
 {% set name = "torchaudio" %}
 {% set version = "2.1.0" %}
-{% set run_unittests = False %}
+{% set run_unittests = True %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
 {% set compatible_pytorch = "2.1.0" %}
@@ -100,7 +100,7 @@ test:
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win and not s390x]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
-    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
+    - pytest -v {{ ignore_modules }} test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
     {% endif %}
   requires:
     - pip
