@@ -1,16 +1,28 @@
 Index: audio/CMakeLists.txt
 ===================================================================
 --- audio.orig/CMakeLists.txt	2024-07-31 15:21:46.211818770 -0500
-+++ audio/CMakeLists.txt	2024-07-31 15:30:04.909554447 -0500
++++ audio/CMakeLists.txt	2024-07-31 15:54:16.241535324 -0500
 @@ -141,6 +141,11 @@
  endif()
  
  if(USE_OPENMP)
-+  set(OpenMP_CXX_FLAGS "-I${CMAKE_PREFIX_PATH}/include")
++  set(OpenMP_CXX_FLAGS "-I${PREFIX}/include")
 +  set(OpenMP_CXX_LIB_NAMES "iomp5")
-+  set(OpenMP_C_FLAGS "-I${CMAKE_PREFIX_PATH}/include")
++  set(OpenMP_C_FLAGS "-I${PREFIX}/include")
 +  set(OpenMP_C_LIB_NAMES "iomp5")
-+  set(OpenMP_iomp5_LIBRARY "${CMAKE_PREFIX_PATH}/lib/libiomp5.so")
++  set(OpenMP_iomp5_LIBRARY "${PREFIX}/lib/libiomp5.so")
    find_package(OpenMP REQUIRED)
  endif()
  
+Index: audio/tools/setup_helpers/extension.py
+===================================================================
+--- audio.orig/tools/setup_helpers/extension.py	2024-07-16 11:46:22.276593547 -0500
++++ audio/tools/setup_helpers/extension.py	2024-07-31 15:53:43.696019549 -0500
+@@ -137,6 +137,7 @@
+             f"-DUSE_CUDA:BOOL={'ON' if _USE_CUDA else 'OFF'}",
+             f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
+             f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
++            f"-DPREFIX='{PREFIX}'",
+         ]
+         build_args = ["--target", "install"]
+         # Pass CUDA architecture to cmake
