@@ -102,7 +102,7 @@ test:
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
     # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
-    - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest  # [not (osx and x86_64) and not s390x]
+    - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest
     {% endif %}
   requires:
     - pip
