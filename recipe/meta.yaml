@@ -46,6 +46,8 @@ build:
     - "**/torch_cpu.dll"            # [win]
     - "**/c10.dll"                  # [win]
     - "**/torch_python.dll"         # [win]
+    - "**/libtorchaudio_ffmpeg.pyd" # [win]
+    - "**/libtorchaudio.pyd"        # [win]
 
 requirements:
   build:
