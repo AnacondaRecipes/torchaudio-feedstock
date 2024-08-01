@@ -66,8 +66,11 @@ requirements:
     # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - {{ pin_compatible('ffmpeg') }}
-    # because of pytorch --> _openmp_mutex. _openmp_mutex is needed at runtime on linux
-    - openmp        # [linux and blas_impl == 'mkl']
+    # because of pytorch --> _openmp_mutex. _openmp_mutex is needed at runtime on linux.
+    # this can be considered a workaround until pytorch starts depending on libgomp instead of _openmp_mutex
+    # _openmp_mutex and libgomp are currently both distributing libgomp.so.1, which is also strange
+    # unlike intel-openmp, _openmp_mutex is not a dependency on win, hence only linux is in the selector
+    - _openmp_mutex  # [linux and blas_impl == 'mkl']
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
