@@ -98,7 +98,7 @@ test:
     {% if run_unittests %}
     # dataset provides the dataset for the hubert example test. It's not a runtime requirement.
     - pip install dataset
-    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not (osx and x86_64) and not win and not s390x]
+    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
     # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
