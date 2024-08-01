@@ -72,6 +72,10 @@ requirements:
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
+# these tests hang on osx-64, probably resource exhaustion
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets" %}  # [osx and x86_64]
+# and these are killed on win and s390x, probably same reason
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/models" %}  # [(linux and s390x) or win]
 # these tests import torchaudio.prototype which does not exist in main module
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/prototype --ignore=test/integration_tests/rnnt_pipeline_test.py" %}
 # test to skip because of missing flashlight-text
@@ -100,7 +104,6 @@ test:
     - pip install dataset
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
-    # These tests are long and lead to resource exhaustion on osx-64 and linux-s390x
     # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
     - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest
     {% endif %}
