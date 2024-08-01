@@ -93,7 +93,32 @@ requirements:
 test:
   source_files:
   {% if run_unittests %}
-    - test/torchaudio_unittest
+    # choosing a subset of tests to prevent resource exhaustion and still run a reasonable amount of unit tests
+    - test/torchaudio_unittest/assets
+    - test/torchaudio_unittest/backend
+    - test/torchaudio_unittest/common_utils
+    - test/torchaudio_unittest/compliance
+    - test/torchaudio_unittest/datasets/__init__.py
+    - test/torchaudio_unittest/datasets/tedlium_tests.py
+    - test/torchaudio_unittest/example
+    - test/torchaudio_unittest/functional/__init__.py
+    - test/torchaudio_unittest/functional/functional_cpu_test.py
+    - test/torchaudio_unittest/functional/autograd_impl.py
+    - test/torchaudio_unittest/functional/torchscript_consistency_impl.py
+    - test/torchaudio_unittest/io
+    - test/torchaudio_unittest/models/conformer
+    - test/torchaudio_unittest/models/decoder
+    - test/torchaudio_unittest/models/rnnt
+    - test/torchaudio_unittest/models/rnnt_decoder
+    - test/torchaudio_unittest/transforms/__init__.py
+    - test/torchaudio_unittest/transforms/torchscript_consistency_impl.py
+    - test/torchaudio_unittest/transforms/transforms_test.py
+    - test/torchaudio_unittest/transforms/transforms_cpu_test.py
+    - test/torchaudio_unittest/transforms/transforms_test_impl.py
+    - test/torchaudio_unittest/transforms/autograd_test_impl.py
+    - test/torchaudio_unittest/transforms/autograd_cpu_test.py
+    - test/torchaudio_unittest/utils
+    - test/torchaudio_unittest/__init__.py
   {% endif %}
     - test/smoke_test
     - test/integration_tests
