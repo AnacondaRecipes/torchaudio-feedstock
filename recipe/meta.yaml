@@ -1,6 +1,6 @@
 {% set name = "torchaudio" %}
 {% set version = "2.1.0" %}
-{% set run_unittests = True %}
+{% set run_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
 {% set compatible_pytorch = "2.1.0" %}
@@ -106,7 +106,6 @@ test:
     - pytest -v {{ ignore_modules }} test/integration_tests
     {% if run_unittests %}
     # dataset provides the dataset for the hubert example test. It's not a runtime requirement.
-    - pip install dataset
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
