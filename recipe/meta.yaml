@@ -1,6 +1,6 @@
 {% set name = "torchaudio" %}
 {% set version = "2.1.0" %}
-{% set run_unittests = True %}
+{% set run_all_unittests = True %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
 {% set compatible_pytorch = "2.1.0" %}
@@ -92,14 +92,16 @@ requirements:
 
 test:
   source_files:
-  {% if run_unittests %}
+  {% if run_all_unittests %}
+    - test/torchaudio_unittest
+  {% else %}
     # choosing a subset of tests to prevent resource exhaustion and still run a reasonable amount of unit tests
     - test/torchaudio_unittest/assets
     - test/torchaudio_unittest/backend
     - test/torchaudio_unittest/common_utils
     - test/torchaudio_unittest/compliance
     - test/torchaudio_unittest/datasets/__init__.py
-    - test/torchaudio_unittest/datasets/tedlium_tests.py
+    - test/torchaudio_unittest/datasets/tedlium_test.py
     - test/torchaudio_unittest/example
     - test/torchaudio_unittest/functional/__init__.py
     - test/torchaudio_unittest/functional/functional_cpu_test.py
@@ -129,13 +131,11 @@ test:
     - pip check
     - python test/smoke_test/smoke_test.py
     - pytest -v {{ ignore_modules }} test/integration_tests
-    {% if run_unittests %}
     # dataset provides the dataset for the hubert example test. It's not a runtime requirement.
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
     - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest
-    {% endif %}
   requires:
     - pip
     - pytest
