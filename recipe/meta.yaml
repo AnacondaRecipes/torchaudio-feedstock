@@ -135,7 +135,8 @@ test:
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
-    - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest
+    # also, skipping on osx-64 because of resource exhaustion
+    - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest  # [not (osx and x86_64)]
   requires:
     - pip
     - pytest
