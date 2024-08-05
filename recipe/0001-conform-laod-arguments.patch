@@ -1,0 +1,35 @@
+From da1b10c028283b0226a66655908ba29f10ca651c Mon Sep 17 00:00:00 2001
+From: Jack Olivieri <jolivieri@anaconda.com>
+Date: Mon, 5 Aug 2024 12:30:46 +0200
+Subject: [PATCH] conform laod arguments
+
+---
+ torchaudio/backend/_no_backend.py | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/torchaudio/backend/_no_backend.py b/torchaudio/backend/_no_backend.py
+index 5ebeb387..17e419aa 100644
+--- a/torchaudio/backend/_no_backend.py
++++ b/torchaudio/backend/_no_backend.py
+@@ -5,13 +5,12 @@ from torch import Tensor
+ 
+ 
+ def load(
+-    filepath: Union[str, Path],
+-    out: Optional[Tensor] = None,
+-    normalization: Union[bool, float, Callable] = True,
++    filepath: str,
++    frame_offset: int = 0,
++    num_frames: int = -1,
++    normalize: bool = True,
+     channels_first: bool = True,
+-    num_frames: int = 0,
+-    offset: int = 0,
+-    filetype: Optional[str] = None,
++    format: Optional[str] = None,
+ ) -> Tuple[Tensor, int]:
+     raise RuntimeError("No audio I/O backend is available.")
+ 
+-- 
+2.39.3 (Apple Git-146)
+
