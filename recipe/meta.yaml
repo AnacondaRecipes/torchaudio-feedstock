@@ -12,8 +12,6 @@ package:
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 42e3771c8834266de46b19202a36f8db47eb1bb04ac30e8097aa07843f608fcc
-  patches:
-    - 0001-conform-laod-arguments.patch
 
 build:
   number: 0
@@ -58,8 +56,6 @@ requirements:
     - cmake
     - make      # [not win]
     - patchelf  # [linux]
-    - patch     # [not win]
-    - m2-patch  # [win]
   host:
     - python
     - setuptools
