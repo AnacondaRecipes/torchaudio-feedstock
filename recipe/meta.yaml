@@ -108,6 +108,12 @@ requirements:
 # stream writer tests fail on windows because another process locks the writing on the output directory (common problem on win)
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/io/stream_writer_test.py" %}  # [win]
 
+# We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
+{% set tests_to_skip = "kaldi" %}
+# skip test fail in EffectorTest.test_formats_5_mp3 with "RuntimeError: Failed to open codec: (Invalid argument)"
+# because of missing mp3 codec support on ffmpeg for win-64
+{% set tests_to_skip = tests_to_skip + " or test_formats_5_mp3" %}  # [win]
+
 test:
   source_files:
   {% if run_all_unittests %}
@@ -152,9 +158,8 @@ test:
     # dataset provides the dataset for the hubert example test. It's not a runtime requirement.
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
-    # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
-    # also, skipping on osx-64 because of resource exhaustion
-    - pytest -v {{ ignore_modules }} -k "not kaldi" test/torchaudio_unittest  # [not (osx and x86_64)]
+    # skipping on osx-64 because of resource exhaustion
+    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest  # [not (osx and x86_64)]
   requires:
     - pip
     - pytest
