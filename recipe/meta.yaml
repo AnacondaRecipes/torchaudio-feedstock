@@ -17,6 +17,18 @@ build:
   number: 0
   # See above compatibility matrix
   skip: True  # [py>311]
+  # Several test failures on s390x are concerning, particularly the smoke tests in
+  # test/torchaudio_unittest/backend/dispatcher/smoke_test.py::test_wav->run_smoke_test->get_save_func(): on s390x the
+  # function get_save_func() is unable to instantiate a StreamWriter through the ffmpeg save_audio function
+  # Call stack:
+  # get_save_func() --> save() --> backend.save(...) --> torchaudio/_backend/ffmpeg.py::save_audio() --> s.open() -->
+  # torchaudio/io/_stream_writer.py::self._s.open(option)   throws a RuntimeError
+  # RuntimeError: Failed to write header:
+  # /tmp/tmpx2on2_qz/torchaudio_unittest.backend.dispatcher.smoke_test.SmokeTest.test_wav/test.wav (Function not implemented)
+  #
+  # since the save function constitutes one of the basic functionalities of torchaudio, it is best to skip the platform altogether
+  # as long as other backends (sox, libsndfile) are not available for s390x
+  skip: True  # [s390x]
   script:
     - export USE_FFMPEG=ON                         # [not win]
     - set USE_FFMPEG=ON                            # [win]
@@ -39,7 +51,6 @@ build:
     - "**/libtorch_python.so"       # [linux]
     - "**/libtorchaudio_ffmpeg.so"  # [linux or osx]
     - "**/libtorchaudio.so"         # [linux or osx]
-    - "**/ld64.so.1"                # [s390x]
     - "**/libc10.dylib"             # [osx]
     - "**/libtorch_cpu.dylib"       # [osx]
     - "**/libtorch_python.dylib"    # [osx]
