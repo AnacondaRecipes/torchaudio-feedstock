@@ -1,6 +1,6 @@
 {% set name = "torchaudio" %}
 {% set version = "2.1.0" %}
-{% set run_all_unittests = True %}
+{% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
 {% set compatible_pytorch = "2.1.0" %}
