@@ -3,7 +3,6 @@
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
-{% set compatible_pytorch = "2.1.0" %}
 
 package:
   name: {{ name|lower }}
@@ -72,7 +71,7 @@ requirements:
     - setuptools
     - wheel
     - pip
-    - pytorch {{ compatible_pytorch }}
+    - pytorch 2.1.0
     - pybind11 2.12.0
     - ffmpeg 6.1.1
     - llvm-openmp  # [osx]
@@ -83,7 +82,7 @@ requirements:
     # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - {{ pin_compatible('ffmpeg') }}
-    - pytorch {{ compatible_pytorch }}
+    - pytorch {{ pin_compatible('pytorch', min_pin='x.x.x', max_pin='x.x.x') }}
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
