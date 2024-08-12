@@ -128,10 +128,6 @@ test:
     - test/torchaudio_unittest/functional/autograd_impl.py
     - test/torchaudio_unittest/functional/torchscript_consistency_impl.py
     - test/torchaudio_unittest/io
-    - test/torchaudio_unittest/models/conformer
-    - test/torchaudio_unittest/models/decoder
-    - test/torchaudio_unittest/models/rnnt
-    - test/torchaudio_unittest/models/rnnt_decoder
     - test/torchaudio_unittest/transforms/__init__.py
     - test/torchaudio_unittest/transforms/torchscript_consistency_impl.py
     - test/torchaudio_unittest/transforms/transforms_test.py
@@ -151,7 +147,6 @@ test:
     - pip check
     - python test/smoke_test/smoke_test.py
     - pytest -v {{ ignore_modules }} test/integration_tests
-    # dataset provides the dataset for the hubert example test. It's not a runtime requirement.
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
     # skipping on osx-64 because of resource exhaustion
