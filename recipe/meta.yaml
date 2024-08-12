@@ -77,10 +77,6 @@ requirements:
     - llvm-openmp  # [osx]
   run:
     - python
-    # according to optional dependencies
-    # https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#optional-dependencies
-    # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
-    # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - {{ pin_compatible('ffmpeg') }}
     - {{ pin_compatible('pytorch', min_pin='x.x.x', max_pin='x.x.x') }}
 
