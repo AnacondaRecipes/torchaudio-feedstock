@@ -82,7 +82,7 @@ requirements:
     # in this special case we want users of channel sfe140ed to be able to use the load and save functions, therefore
     # at least ffmpeg (the mightiest of the backends) is specified as a run dependency.
     - {{ pin_compatible('ffmpeg') }}
-    - pytorch {{ pin_compatible('pytorch', min_pin='x.x.x', max_pin='x.x.x') }}
+    - {{ pin_compatible('pytorch', min_pin='x.x.x', max_pin='x.x.x') }}
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
