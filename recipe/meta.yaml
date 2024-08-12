@@ -129,6 +129,7 @@ test:
     - test/torchaudio_unittest/example
     - test/torchaudio_unittest/functional/__init__.py
     - test/torchaudio_unittest/functional/functional_cpu_test.py
+    - test/torchaudio_unittest/functional/functional_impl.py
     - test/torchaudio_unittest/functional/autograd_impl.py
     - test/torchaudio_unittest/functional/torchscript_consistency_impl.py
     - test/torchaudio_unittest/io
@@ -139,7 +140,6 @@ test:
     - test/torchaudio_unittest/transforms/__init__.py
     - test/torchaudio_unittest/transforms/torchscript_consistency_impl.py
     - test/torchaudio_unittest/transforms/transforms_test.py
-    - test/torchaudio_unittest/transforms/transforms_impl.py
     - test/torchaudio_unittest/transforms/transforms_cpu_test.py
     - test/torchaudio_unittest/transforms/transforms_test_impl.py
     - test/torchaudio_unittest/transforms/autograd_test_impl.py
