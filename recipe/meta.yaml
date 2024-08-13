@@ -1,0 +1,189 @@
+{% set name = "torchaudio" %}
+{% set version = "2.1.0" %}
+{% set run_all_unittests = False %}
+# Torchaudio and PyTorch are tightly coupled in terms of versions.
+# see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: 42e3771c8834266de46b19202a36f8db47eb1bb04ac30e8097aa07843f608fcc
+
+build:
+  number: 0
+  # See above compatibility matrix
+  skip: True  # [py>311]
+  # Several test failures on s390x are concerning, particularly the smoke tests in
+  # test/torchaudio_unittest/backend/dispatcher/smoke_test.py::test_wav->run_smoke_test->get_save_func(): on s390x the
+  # function get_save_func() is unable to instantiate a StreamWriter through the ffmpeg save_audio function
+  # Call stack:
+  # get_save_func() --> save() --> backend.save(...) --> torchaudio/_backend/ffmpeg.py::save_audio() --> s.open() -->
+  # torchaudio/io/_stream_writer.py::self._s.open(option)   throws a RuntimeError
+  # RuntimeError: Failed to write header:
+  # /tmp/tmpx2on2_qz/torchaudio_unittest.backend.dispatcher.smoke_test.SmokeTest.test_wav/test.wav (Function not implemented)
+  #
+  # since the save function constitutes one of the basic functionalities of torchaudio, it is best to skip the platform altogether
+  # as long as other backends (sox, libsndfile) are not available for s390x
+  skip: True  # [s390x]
+  script:
+    - export USE_FFMPEG=ON                         # [not win]
+    - set USE_FFMPEG=ON                            # [win]
+    - export BUILD_SOX=OFF                         # [not win]
+    - set BUILD_SOX=OFF                            # [win]
+    # On linux, Torchaudio's build system will find gnu openmp preferentially to other openmp implementations,
+    # and we can't keep gnu openmp out of the host environment due to issues with our openmp packages.
+    # That could lead to conflicts with other packages. Turn it off for linux.
+    - export USE_OPENMP=OFF                        # [linux]
+    - export USE_OPENMP=ON                         # [osx]
+    - set USE_OPENMP=ON                            # [win]
+    - export BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON  # [not win]
+    - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
+    - export FFMPEG_ROOT=${PREFIX}                 # [not win]
+    - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
+    - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  missing_dso_whitelist:
+    - "**/libc10.so"                # [linux]
+    - "**/libtorch_cpu.so"          # [linux]
+    - "**/libtorch_python.so"       # [linux]
+    - "**/libtorchaudio_ffmpeg.so"  # [linux or osx]
+    - "**/libtorchaudio.so"         # [linux or osx]
+    - "**/libc10.dylib"             # [osx]
+    - "**/libtorch_cpu.dylib"       # [osx]
+    - "**/libtorch_python.dylib"    # [osx]
+    - "**/torch_cpu.dll"            # [win]
+    - "**/c10.dll"                  # [win]
+    - "**/torch_python.dll"         # [win]
+    - "**/libtorchaudio_ffmpeg.pyd" # [win]
+    - "**/libtorchaudio.pyd"        # [win]
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ compiler('c') }}
+    - cmake
+    - make      # [not win]
+    - patchelf  # [linux]
+  host:
+    - python
+    - setuptools
+    - wheel
+    - pip
+    - pytorch 2.1.0
+    - pybind11 2.12.0
+    - ffmpeg 6.1.1
+    - llvm-openmp  # [osx]
+  run:
+    - python
+    - {{ pin_compatible('ffmpeg') }}
+    - {{ pin_compatible('pytorch', min_pin='x.x.x', max_pin='x.x.x') }}
+
+# ignoring sox tests because we don't integrate sox
+{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
+# these tests hang on osx-64, probably resource exhaustion
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets" %}  # [osx and x86_64]
+# and these are killed on win and s390x, probably same reason
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/models" %}  # [(linux and s390x) or win]
+# these tests import torchaudio.prototype which does not exist in main module
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/prototype --ignore=test/integration_tests/rnnt_pipeline_test.py" %}
+# test to skip because of missing flashlight-text
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/ctc_decoder_integration_test.py" %}
+# test to skip because of missing dependency deep-phonemizer
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/tacotron2_pipeline_test.py" %}
+# Tests to skip because of frame_offset not being accepted as argument of load() function. All load function implementation
+# seem to have a frame_offset parameter except for torchaudio/backend/_no_backend.py::load(), which should not be used since
+# ffmpeg is chosen as backend. More investigation would be necessary but this doesn't seem to be a problem with all other
+# occurrences of the load() function
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets/tedlium_test.py" %}
+# skipping this test because of URL errors on osx (these are passing locally though)
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/loudness_compliance_test.py" %}  # [osx]
+# stream writer tests fail on windows because another process locks the writing on the output directory (common problem on win)
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/io/stream_writer_test.py" %}  # [win]
+
+# We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
+{% set tests_to_skip = "kaldi" %}
+# skip test fail in EffectorTest.test_formats_5_mp3 with "RuntimeError: Failed to open codec: (Invalid argument)"
+# because of missing mp3 codec support on ffmpeg for win-64
+{% set tests_to_skip = tests_to_skip + " or test_formats_5_mp3" %}  # [win]
+
+test:
+  source_files:
+  {% if run_all_unittests %}
+    - test/torchaudio_unittest
+  {% else %}
+    # choosing a subset of tests to prevent resource exhaustion and still run a reasonable amount of unit tests
+    - test/torchaudio_unittest/assets
+    - test/torchaudio_unittest/backend
+    - test/torchaudio_unittest/common_utils
+    - test/torchaudio_unittest/compliance
+    - test/torchaudio_unittest/datasets/__init__.py
+    - test/torchaudio_unittest/datasets/tedlium_test.py
+    - test/torchaudio_unittest/example
+    - test/torchaudio_unittest/functional/__init__.py
+    - test/torchaudio_unittest/functional/functional_cpu_test.py
+    - test/torchaudio_unittest/functional/functional_impl.py
+    - test/torchaudio_unittest/functional/autograd_impl.py
+    - test/torchaudio_unittest/functional/torchscript_consistency_impl.py
+    - test/torchaudio_unittest/io
+    - test/torchaudio_unittest/transforms/__init__.py
+    - test/torchaudio_unittest/transforms/torchscript_consistency_impl.py
+    - test/torchaudio_unittest/transforms/transforms_test.py
+    - test/torchaudio_unittest/transforms/transforms_cpu_test.py
+    - test/torchaudio_unittest/transforms/transforms_test_impl.py
+    - test/torchaudio_unittest/transforms/autograd_test_impl.py
+    - test/torchaudio_unittest/transforms/autograd_cpu_test.py
+    - test/torchaudio_unittest/utils
+    - test/torchaudio_unittest/__init__.py
+  {% endif %}
+    - test/smoke_test
+    - test/integration_tests
+    - examples
+  imports:
+    - torchaudio
+  commands:
+    - pip check
+    - python test/smoke_test/smoke_test.py
+    - pytest -v {{ ignore_modules }} test/integration_tests
+  {% if run_all_unittests %}
+    # to run the tests that require hubert, `dataset` is necessary (currently missing on main)
+    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
+    - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
+  {% endif %}
+    # skipping on osx-64 because of resource exhaustion
+    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest  # [not (osx and x86_64)]
+  requires:
+    - pip
+    - pytest
+    - typing
+    - parameterized
+    - scipy
+    - numpy <1.24
+    - scikit-learn
+    - pillow
+    - expecttest
+
+
+about:
+  home: https://pytorch.org/audio/stable/index.html
+  summary: Torchaudio is a library for audio and signal processing with PyTorch.
+  description: |
+    The aim of torchaudio is to apply PyTorch to the audio domain. By supporting PyTorch, torchaudio follows the same
+    philosophy of providing strong GPU acceleration, having a focus on trainable features through the autograd system,
+    and having consistent style (tensor names and dimension names). Therefore, it is primarily a machine learning
+    library and not a general signal processing library. The benefits of PyTorch can be seen in torchaudio through
+    having all the computations be through PyTorch operations which makes it easy to use and feel like a natural
+    extension.
+  license: BSD-2-Clause
+  license_file: LICENSE
+  license_family: BSD
+  doc_url: https://pytorch.org/audio/main/torchaudio.html
+  dev_url: https://github.com/pytorch/audio
+
+extra:
+  recipe-maintainers:
+    - boldorider4
+  skip-lints:
+    - cbc_dep_in_run_missing_from_host
