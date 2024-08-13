@@ -147,8 +147,11 @@ test:
     - pip check
     - python test/smoke_test/smoke_test.py
     - pytest -v {{ ignore_modules }} test/integration_tests
+  {% if run_all_unittests %}
+    # to run the tests that require hubert, `dataset` is necessary (currently missing on main)
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
+  {% endif %}
     # skipping on osx-64 because of resource exhaustion
     - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest  # [not (osx and x86_64)]
   requires:
