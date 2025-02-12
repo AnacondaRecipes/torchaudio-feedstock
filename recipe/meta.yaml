@@ -1,5 +1,5 @@
 {% set name = "torchaudio" %}
-{% set version = "2.1.0" %}
+{% set version = "2.5.1" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
@@ -10,12 +10,10 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 42e3771c8834266de46b19202a36f8db47eb1bb04ac30e8097aa07843f608fcc
+  sha256: 200fbb1234c104a3662b444c0bec2acf4049c4b2113a73c0dc5f4e672cc2a4cc
 
 build:
   number: 0
-  # See above compatibility matrix
-  skip: True  # [py>311]
   # Several test failures on s390x are concerning, particularly the smoke tests in
   # test/torchaudio_unittest/backend/dispatcher/smoke_test.py::test_wav->run_smoke_test->get_save_func(): on s390x the
   # function get_save_func() is unable to instantiate a StreamWriter through the ffmpeg save_audio function
@@ -71,7 +69,7 @@ requirements:
     - setuptools
     - wheel
     - pip
-    - pytorch 2.1.0
+    - pytorch 2.5.1
     - pybind11 2.12.0
     - ffmpeg 6.1.1
     - llvm-openmp  # [osx]
@@ -160,7 +158,7 @@ test:
     - typing
     - parameterized
     - scipy
-    - numpy <1.24
+    - numpy
     - scikit-learn
     - pillow
     - expecttest
