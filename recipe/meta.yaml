@@ -48,6 +48,7 @@ build:
     - "**/libtorch_python.so"       # [linux]
     - "**/libtorchaudio_ffmpeg.so"  # [linux or osx]
     - "**/libtorchaudio.so"         # [linux or osx]
+    - "**/libtorio_ffmpeg.so"       # [unix]
     - "**/libc10.dylib"             # [osx]
     - "**/libtorch_cpu.dylib"       # [osx]
     - "**/libtorch_python.dylib"    # [osx]
@@ -56,6 +57,7 @@ build:
     - "**/torch_python.dll"         # [win]
     - "**/libtorchaudio_ffmpeg.pyd" # [win]
     - "**/libtorchaudio.pyd"        # [win]
+    - "**/libtorio_ffmpeg.pyd"      # [win]
 
 requirements:
   build:
