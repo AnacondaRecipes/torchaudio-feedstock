@@ -141,6 +141,8 @@ test:
     - examples
   imports:
     - torchaudio
+    - torch
+    - torch._C
   commands:
     - pip check
     - python test/smoke_test/smoke_test.py
