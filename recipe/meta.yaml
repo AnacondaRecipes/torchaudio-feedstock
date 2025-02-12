@@ -2,7 +2,7 @@
 {% set version = "2.5.1" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
-# see compatibility matrix in https://github.com/pytorch/audio/blob/v2.1.2/docs/source/installation.rst#compatibility-matrix
+# check the [releases page](https://github.com/pytorch/audio/releases) for comatibility.
 
 package:
   name: {{ name|lower }}
