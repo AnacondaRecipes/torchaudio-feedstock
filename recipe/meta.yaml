@@ -109,6 +109,11 @@ requirements:
 # because of missing mp3 codec support on ffmpeg for win-64
 {% set tests_to_skip = tests_to_skip + " or test_formats_5_mp3" %}  # [win]
 
+
+{% set integration_tests_to_skip = "_not_a_real_test" %}
+# Segfaulting when building with python 3.13. Passed on a G4 dev instance. Likely OOM.
+{% set integration_tests_to_skip = integration_tests_to_skip + " or test_finetune_asr_model " %}  # [win and py>312]
+
 test:
   source_files:
   {% if run_all_unittests %}
@@ -148,7 +153,7 @@ test:
   commands:
     - pip check
     - python test/smoke_test/smoke_test.py
-    - pytest -v {{ ignore_modules }} test/integration_tests
+    - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests
   {% if run_all_unittests %}
     # to run the tests that require hubert, `dataset` is necessary (currently missing on main)
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
