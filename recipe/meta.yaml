@@ -39,27 +39,6 @@ build:
   skip: True  # [s390x]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
-  script:
-    - export USE_FFMPEG=ON                         # [not win]
-    - set USE_FFMPEG=ON                            # [win]
-    - export BUILD_SOX=OFF                         # [not win]
-    - set BUILD_SOX=OFF                            # [win]
-    # On linux, Torchaudio's build system will find gnu openmp preferentially to other openmp implementations,
-    # and we can't keep gnu openmp out of the host environment due to issues with our openmp packages.
-    # That could lead to conflicts with other packages. Turn it off for linux.
-    - export USE_OPENMP=OFF                        # [linux]
-    - export USE_OPENMP=ON                         # [osx]
-    - set USE_OPENMP=ON                            # [win]
-    - export BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON  # [not win]
-    - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
-    - export FFMPEG_ROOT=${PREFIX}                 # [not win]
-    - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
-    - export TORCH_CUDA_ARCH_LIST="5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0+PTX"   # [gpu_variant == "cuda"]
-    - export CUDA_TOOLKIT_ROOT_DIR=${PREFIX}                                  # [gpu_variant == "cuda"]
-    - export CUDA_HOME=${PREFIX}                                              # [gpu_variant == "cuda"]
-    - export USE_CUDA=1                                                       # [gpu_variant == "cuda"]
-    - export BUILD_CUDA_CTC_DECODER=1                                         # [gpu_variant == "cuda"]
-    - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   missing_dso_whitelist:
     - "**/libc10.so"                # [linux]
     - "**/libtorch_cpu.so"          # [linux]
