@@ -86,7 +86,7 @@ requirements:
     - libcublas-dev                               # [gpu_variant == "cuda"]
     #- libcufft-dev                                # [gpu_variant == "cuda"]
     #- libcurand-dev                               # [gpu_variant == "cuda"]
-    #- libcusolver-dev                             # [gpu_variant == "cuda"]
+    - libcusolver-dev                             # [gpu_variant == "cuda"]
     - libcusparse-dev                             # [gpu_variant == "cuda"]
   run:
     - python
