@@ -9,14 +9,13 @@ Index: audio/tools/setup_helpers/extension.py
 ===================================================================
 --- audio.orig/tools/setup_helpers/extension.py	2025-05-05 10:15:31.831261947 -0500
 +++ audio/tools/setup_helpers/extension.py	2025-05-05 10:17:18.986282706 -0500
-@@ -144,6 +144,11 @@
+@@ -144,6 +144,8 @@
          ]
          if "CMAKE_ARGS" in os.environ:
              cmake_args += shlex.split(os.environ["CMAKE_ARGS"])
 +        if _USE_CUDA:
 +            cmake_args += [
-+                f"-DCUDA_TOOLKIT_ROOT_DIR={os.environ.get('CUDA_HOME', '')}",
-+                f"-DCUDA_INCLUDE_DIRS={os.environ.get('CUDA_HOME', '')}/include",
++                f"-DCMAKE_CUDA_COMPILER={os.environ.get('CUDA_HOME', '')}",
 +            ]
  
          build_args = ["--target", "install"]
