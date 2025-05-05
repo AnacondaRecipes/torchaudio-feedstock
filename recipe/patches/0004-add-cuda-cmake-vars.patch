@@ -15,7 +15,7 @@ Index: audio/tools/setup_helpers/extension.py
              cmake_args += shlex.split(os.environ["CMAKE_ARGS"])
 +        if _USE_CUDA:
 +            cmake_args += [
-+                f"-DCMAKE_CUDA_COMPILER={os.environ.get('PREFIX', '')}",
++                f"-DCMAKE_CUDA_COMPILER={os.environ.get('PREFIX', '')}/bin/nvcc",
 +            ]
  
          build_args = ["--target", "install"]
