@@ -1,25 +1,23 @@
-From c7ced84f1175294d75f55ae84a761f9d29720378 Mon Sep 17 00:00:00 2001
-From: Tobias Fischer <info@tobiasfischer.info>
-Date: Thu, 10 Oct 2024 09:38:57 +1000
+From: Daniel Petry <dpetry@anaconda.com>
 Subject: [PATCH 4/5] Add CUDA-specific CMake variables
 
 ---
  tools/setup_helpers/extension.py | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/tools/setup_helpers/extension.py b/tools/setup_helpers/extension.py
-index 8fa239bc..9fa239bc 100644
---- a/tools/setup_helpers/extension.py
-+++ b/tools/setup_helpers/extension.py
-@@ -142,6 +142,10 @@ class CMakeBuild(build_ext):
-             f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
-             f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
+Index: audio/tools/setup_helpers/extension.py
+===================================================================
+--- audio.orig/tools/setup_helpers/extension.py	2025-05-05 10:15:31.831261947 -0500
++++ audio/tools/setup_helpers/extension.py	2025-05-05 10:17:18.986282706 -0500
+@@ -144,6 +144,11 @@
          ]
+         if "CMAKE_ARGS" in os.environ:
+             cmake_args += shlex.split(os.environ["CMAKE_ARGS"])
 +        if _USE_CUDA:
 +            cmake_args += [
 +                f"-DCUDA_TOOLKIT_ROOT_DIR={os.environ.get('CUDA_HOME', '')}",
 +                f"-DCUDA_INCLUDE_DIRS={os.environ.get('CUDA_HOME', '')}/include",
 +            ]
-         if "CMAKE_ARGS" in os.environ:
-             cmake_args += shlex.split(os.environ["CMAKE_ARGS"])
  
+         build_args = ["--target", "install"]
+         # Pass CUDA architecture to cmake
