@@ -7,15 +7,15 @@ Subject: [PATCH 4/5] Add CUDA-specific CMake variables
 
 Index: audio/tools/setup_helpers/extension.py
 ===================================================================
---- audio.orig/tools/setup_helpers/extension.py	2025-05-05 10:15:31.831261947 -0500
-+++ audio/tools/setup_helpers/extension.py	2025-05-05 10:17:18.986282706 -0500
-@@ -144,6 +144,8 @@
+--- audio.orig/tools/setup_helpers/extension.py	2025-05-05 11:57:55.217293448 -0500
++++ audio/tools/setup_helpers/extension.py	2025-05-05 11:58:55.264817171 -0500
+@@ -144,6 +144,10 @@
          ]
          if "CMAKE_ARGS" in os.environ:
              cmake_args += shlex.split(os.environ["CMAKE_ARGS"])
 +        if _USE_CUDA:
 +            cmake_args += [
-+                f"-DCMAKE_CUDA_COMPILER={os.environ.get('CUDA_HOME', '')}",
++                f"-DCMAKE_CUDA_COMPILER={os.environ.get('PREFIX', '')}",
 +            ]
  
          build_args = ["--target", "install"]
