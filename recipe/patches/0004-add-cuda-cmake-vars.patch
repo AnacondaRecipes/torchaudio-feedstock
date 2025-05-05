@@ -1,0 +1,25 @@
+From c7ced84f1175294d75f55ae84a761f9d29720378 Mon Sep 17 00:00:00 2001
+From: Tobias Fischer <info@tobiasfischer.info>
+Date: Thu, 10 Oct 2024 09:38:57 +1000
+Subject: [PATCH 4/5] Add CUDA-specific CMake variables
+
+---
+ tools/setup_helpers/extension.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/tools/setup_helpers/extension.py b/tools/setup_helpers/extension.py
+index 8fa239bc..9fa239bc 100644
+--- a/tools/setup_helpers/extension.py
++++ b/tools/setup_helpers/extension.py
+@@ -142,6 +142,10 @@ class CMakeBuild(build_ext):
+             f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
+             f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
+         ]
++        if _USE_CUDA:
++            cmake_args += [
++                f"-DCUDA_TOOLKIT_ROOT_DIR={os.environ.get('CUDA_HOME', '')}",
++                f"-DCUDA_INCLUDE_DIRS={os.environ.get('CUDA_HOME', '')}/include",
++            ]
+         if "CMAKE_ARGS" in os.environ:
+             cmake_args += shlex.split(os.environ["CMAKE_ARGS"])
+ 

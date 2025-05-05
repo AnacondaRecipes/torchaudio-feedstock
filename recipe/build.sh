@@ -22,6 +22,8 @@ if [[ "${gpu_variant}" == "cuda" ]]; then
     export CUDA_HOME=${PREFIX}
     export USE_CUDA=1
     export BUILD_CUDA_CTC_DECODER=1
+    # Ensure CUDA paths are set correctly
+    export CMAKE_ARGS="-DCUDA_TOOLKIT_ROOT_DIR=${PREFIX} -DCUDA_INCLUDE_DIRS=${PREFIX}/include"
 fi
 
 # Install package
