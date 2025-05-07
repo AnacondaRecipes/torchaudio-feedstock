@@ -75,6 +75,7 @@ requirements:
     - llvm-openmp  # [osx]
     - cuda-driver-dev                             # [gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
+    - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
     - cuda-nvml-dev                               # [gpu_variant == "cuda"]
     - cuda-profiler-api                           # [gpu_variant == "cuda"]
     - libcusolver-dev                             # [gpu_variant == "cuda"]
