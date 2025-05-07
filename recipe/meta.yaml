@@ -4,7 +4,7 @@
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for comatibility.
 
-{% set build = 1 %}
+{% set build = 0 %}
 # Use a higher build number for the GPU variants, to ensure that they're
 # preferred by conda's solver, and they're preferentially
 # installed where the platform supports it.
@@ -61,7 +61,6 @@ requirements:
     - {{ compiler('cxx') }}
     - {{ compiler('c') }}
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
-    - libcublas-dev                               # [gpu_variant == "cuda"]
     - cmake
     - make      # [not win]
     - patchelf  # [linux]
@@ -76,13 +75,8 @@ requirements:
     - llvm-openmp  # [osx]
     - cuda-driver-dev                             # [gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
-    #- cuda-nvrtc-dev                              # [gpu_variant == "cuda"]
-    #- cuda-nvtx-dev                               # [gpu_variant == "cuda"]
     - cuda-nvml-dev                               # [gpu_variant == "cuda"]
     - cuda-profiler-api                           # [gpu_variant == "cuda"]
-    - libcublas-dev                               # [gpu_variant == "cuda"]
-    #- libcufft-dev                                # [gpu_variant == "cuda"]
-    #- libcurand-dev                               # [gpu_variant == "cuda"]
     - libcusolver-dev                             # [gpu_variant == "cuda"]
     - libcusparse-dev                             # [gpu_variant == "cuda"]
   run:
