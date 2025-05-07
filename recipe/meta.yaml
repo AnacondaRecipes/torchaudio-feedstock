@@ -61,6 +61,7 @@ requirements:
     - {{ compiler('cxx') }}
     - {{ compiler('c') }}
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
+    - libcublas-dev                               # [gpu_variant == "cuda"]
     - cmake
     - make      # [not win]
     - patchelf  # [linux]
