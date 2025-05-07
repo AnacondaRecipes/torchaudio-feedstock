@@ -55,6 +55,7 @@ build:
     - "**/libtorchaudio_ffmpeg.pyd" # [win]
     - "**/libtorchaudio.pyd"        # [win]
     - "**/libtorio_ffmpeg.pyd"      # [win]
+    - "**/libctc_prefix_decoder.so" # [gpu_variant == "cuda"]
 
 requirements:
   build:
