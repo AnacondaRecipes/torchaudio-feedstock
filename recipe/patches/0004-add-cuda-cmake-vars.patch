@@ -1,5 +1,5 @@
 From: Daniel Petry <dpetry@anaconda.com>
-Subject: [PATCH 4/5] Add CUDA-specific CMake variables
+Subject: [PATCH 4/5] Add CMake variables to find CUDA
 
 ---
  tools/setup_helpers/extension.py | 4 ++++
@@ -7,16 +7,18 @@ Subject: [PATCH 4/5] Add CUDA-specific CMake variables
 
 Index: audio/tools/setup_helpers/extension.py
 ===================================================================
---- audio.orig/tools/setup_helpers/extension.py	2025-05-05 11:57:55.217293448 -0500
-+++ audio/tools/setup_helpers/extension.py	2025-05-05 11:58:55.264817171 -0500
-@@ -144,6 +144,10 @@
+--- audio.orig/tools/setup_helpers/extension.py	2025-05-07 13:58:10.152255010 -0500
++++ audio/tools/setup_helpers/extension.py	2025-05-07 14:00:45.638695581 -0500
+@@ -141,6 +141,12 @@
+             f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
+             f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
          ]
-         if "CMAKE_ARGS" in os.environ:
-             cmake_args += shlex.split(os.environ["CMAKE_ARGS"])
 +        if _USE_CUDA:
 +            cmake_args += [
 +                f"-DCMAKE_CUDA_COMPILER={os.environ.get('PREFIX', '')}/bin/nvcc",
++                f"-DCMAKE_FIND_ROOT_PATH={os.environ.get('PREFIX', '')};{os.environ.get('BUILD_PREFIX', '')}/x86_64-conda-linux-gnu/sysroot;{os.environ.get('PREFIX', '')}/targets/x86_64-linux;{os.environ.get('BUILD_PREFIX', '')}/targets/x86_64-linux",
 +            ]
- 
++
          build_args = ["--target", "install"]
          # Pass CUDA architecture to cmake
+         if _TORCH_CUDA_ARCH_LIST is not None:
