@@ -4,6 +4,14 @@
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for comatibility.
 
+{% set build = 0 %}
+# Use a higher build number for the GPU variants, to ensure that they're
+# preferred by conda's solver, and they're preferentially
+# installed where the platform supports it.
+{% if gpu_variant != "cpu" %}
+{% set build = build + 100 %}
+{% endif %}
+
 package:
   name: {{ name|lower }}
   version: {{ version }}
@@ -11,9 +19,12 @@ package:
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 200fbb1234c104a3662b444c0bec2acf4049c4b2113a73c0dc5f4e672cc2a4cc
+  patches:
+    - patches/0001-add-cuda-cmake-vars.patch
+    - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
-  number: 0
+  number: {{ build }}
   # Several test failures on s390x are concerning, particularly the smoke tests in
   # test/torchaudio_unittest/backend/dispatcher/smoke_test.py::test_wav->run_smoke_test->get_save_func(): on s390x the
   # function get_save_func() is unable to instantiate a StreamWriter through the ffmpeg save_audio function
@@ -26,22 +37,8 @@ build:
   # since the save function constitutes one of the basic functionalities of torchaudio, it is best to skip the platform altogether
   # as long as other backends (sox, libsndfile) are not available for s390x
   skip: True  # [s390x]
-  script:
-    - export USE_FFMPEG=ON                         # [not win]
-    - set USE_FFMPEG=ON                            # [win]
-    - export BUILD_SOX=OFF                         # [not win]
-    - set BUILD_SOX=OFF                            # [win]
-    # On linux, Torchaudio's build system will find gnu openmp preferentially to other openmp implementations,
-    # and we can't keep gnu openmp out of the host environment due to issues with our openmp packages.
-    # That could lead to conflicts with other packages. Turn it off for linux.
-    - export USE_OPENMP=OFF                        # [linux]
-    - export USE_OPENMP=ON                         # [osx]
-    - set USE_OPENMP=ON                            # [win]
-    - export BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON  # [not win]
-    - set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON     # [win]
-    - export FFMPEG_ROOT=${PREFIX}                 # [not win]
-    - set FFMPEG_ROOT=%LIBRARY_PREFIX%             # [win]
-    - {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
+  string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
     - "**/libc10.so"                # [linux]
     - "**/libtorch_cpu.so"          # [linux]
@@ -58,11 +55,14 @@ build:
     - "**/libtorchaudio_ffmpeg.pyd" # [win]
     - "**/libtorchaudio.pyd"        # [win]
     - "**/libtorio_ffmpeg.pyd"      # [win]
+    - "**/libctc_prefix_decoder.so" # [gpu_variant == "cuda"]
 
 requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('c') }}
+    - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
+    - libcublas-dev                               # [gpu_variant == "cuda"]
     - cmake
     - make      # [not win]
     - patchelf  # [linux]
@@ -71,14 +71,22 @@ requirements:
     - setuptools
     - wheel
     - pip
-    - pytorch 2.5.1
+    - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - pybind11 2.12.1
     - ffmpeg 6.1.1
     - llvm-openmp  # [osx]
+    - cuda-driver-dev                             # [gpu_variant == "cuda"]
+    - cuda-cudart-dev                             # [gpu_variant == "cuda"]
+    - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
+    - cuda-nvml-dev                               # [gpu_variant == "cuda"]
+    - cuda-profiler-api                           # [gpu_variant == "cuda"]
+    - libcusolver-dev                             # [gpu_variant == "cuda"]
+    - libcusparse-dev                             # [gpu_variant == "cuda"]
   run:
     - python
     - {{ pin_compatible('ffmpeg') }}
-    - {{ pin_compatible('pytorch', min_pin='x.x.x', max_pin='x.x.x') }}
+    - pytorch ={{ version }}.*=*{{ gpu_variant }}*
+    - __cuda                                      # [gpu_variant == "cuda"]
 
 # ignoring sox tests because we don't integrate sox
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
@@ -160,7 +168,7 @@ test:
     - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
   {% endif %}
     # skipping on osx-64 because of resource exhaustion
-    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest  # [not (osx and x86_64)]
+    - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest   # [not (osx and x86_64)]
   requires:
     - pip
     - pytest

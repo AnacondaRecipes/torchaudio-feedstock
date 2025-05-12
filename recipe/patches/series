@@ -1,0 +1,2 @@
+0004-add-cuda-cmake-vars.patch
+0005-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
