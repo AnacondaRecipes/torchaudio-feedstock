@@ -1,5 +1,5 @@
 {% set name = "torchaudio" %}
-{% set version = "2.5.1" %}
+{% set version = "2.7.0" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for comatibility.
@@ -18,25 +18,13 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 200fbb1234c104a3662b444c0bec2acf4049c4b2113a73c0dc5f4e672cc2a4cc
+  sha256: 31de856d3daa5c1db983eb5b964ed33d54be6e5038d6504181fe51e2d6cc6448  # [ version == "2.7.0" ]
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
   number: {{ build }}
-  # Several test failures on s390x are concerning, particularly the smoke tests in
-  # test/torchaudio_unittest/backend/dispatcher/smoke_test.py::test_wav->run_smoke_test->get_save_func(): on s390x the
-  # function get_save_func() is unable to instantiate a StreamWriter through the ffmpeg save_audio function
-  # Call stack:
-  # get_save_func() --> save() --> backend.save(...) --> torchaudio/_backend/ffmpeg.py::save_audio() --> s.open() -->
-  # torchaudio/io/_stream_writer.py::self._s.open(option)   throws a RuntimeError
-  # RuntimeError: Failed to write header:
-  # /tmp/tmpx2on2_qz/torchaudio_unittest.backend.dispatcher.smoke_test.SmokeTest.test_wav/test.wav (Function not implemented)
-  #
-  # since the save function constitutes one of the basic functionalities of torchaudio, it is best to skip the platform altogether
-  # as long as other backends (sox, libsndfile) are not available for s390x
-  skip: True  # [s390x]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
@@ -64,17 +52,19 @@ requirements:
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
     - libcublas-dev                               # [gpu_variant == "cuda"]
     - cmake
-    - make      # [not win]
-    - patchelf  # [linux]
+    - ninja
+    - make                                        # [not win]
+    - patchelf                                    # [linux]
   host:
     - python
     - setuptools
     - wheel
     - pip
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
-    - pybind11 2.12.1
-    - ffmpeg 6.1.1
-    - llvm-openmp  # [osx]
+    # 2.13 has py314 support
+    - pybind11 2.13
+    - ffmpeg {{ ffmpeg }}
+    - llvm-openmp                                 # [osx]
     - cuda-driver-dev                             # [gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
     - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
@@ -93,8 +83,8 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 # these tests hang on osx-64, probably resource exhaustion
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets" %}  # [osx and x86_64]
-# and these are killed on win and s390x, probably same reason
-{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/models" %}  # [(linux and s390x) or win]
+# and these are killed on win, probably same reason
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/models" %}    # [win]
 # these tests import torchaudio.prototype which does not exist in main module
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/prototype --ignore=test/integration_tests/rnnt_pipeline_test.py" %}
 # test to skip because of missing flashlight-text
