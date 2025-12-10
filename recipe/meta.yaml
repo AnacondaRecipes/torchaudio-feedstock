@@ -2,7 +2,7 @@
 {% set version = "2.7.0" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
-# check the [releases page](https://github.com/pytorch/audio/releases) for comatibility.
+# check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
 
 {% set build = 0 %}
 # Use a higher build number for the GPU variants, to ensure that they're
@@ -25,6 +25,8 @@ source:
 
 build:
   number: {{ build }}
+  # py314 support in 2.9.0
+  skip: true                        # [py>313]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
@@ -47,6 +49,7 @@ build:
 
 requirements:
   build:
+    - {{ stdlib('c') }}
     - {{ compiler('cxx') }}
     - {{ compiler('c') }}
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
@@ -61,11 +64,11 @@ requirements:
     - wheel
     - pip
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
-    # 2.13 has py314 support
-    - pybind11 2.13
+    # pybind11 2.13 has py314 support
+    - pybind11 2.12
     - ffmpeg {{ ffmpeg }}
     - llvm-openmp                                 # [osx]
-    - cuda-driver-dev                             # [gpu_variant == "cuda"]
+    - cuda-driver-dev                             # [linux and gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
     - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
     - cuda-nvml-dev                               # [gpu_variant == "cuda"]
