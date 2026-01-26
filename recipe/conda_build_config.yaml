@@ -2,4 +2,4 @@ cuda_compiler_version:       # [((linux or win) and x86_64)]
   - 12.8                     # [((linux or win) and x86_64)]
 gpu_variant:
   - cpu
-  - cuda                     # [((linux or win) and x86_64)]
+#  - cuda                     # [((linux or win) and x86_64)]
