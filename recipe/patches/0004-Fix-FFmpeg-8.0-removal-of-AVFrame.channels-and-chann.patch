@@ -1,0 +1,108 @@
+From 0cbeca892f98b7b766756afa2e04355a22b37ef7 Mon Sep 17 00:00:00 2001
+From: Jamie Robertson <jamierobertsongames@gmail.com>
+Date: Fri, 20 Feb 2026 15:04:06 +0000
+Subject: [PATCH] Fix FFmpeg 8.0 removal of AVFrame.channels and channel_layout
+ fields
+
+FFmpeg 8.0 (libavutil 60) removed the deprecated AVFrame.channels
+and AVFrame.channel_layout fields. Channel information is now
+accessed exclusively through AVFrame.ch_layout (AVChannelLayout).
+
+- Replace all reads of frame->channels with
+  frame->ch_layout.nb_channels (conversion.cpp, tensor_converter.cpp).
+- Replace frame->channel_layout assignment with
+  av_channel_layout_from_mask() (encode_process.cpp).
+- Remove redundant frame->channels write that was only needed for
+  the TensorConverter on pre-8.0 FFmpeg; on 8.0+ the converter
+  reads ch_layout.nb_channels directly.
+
+All changes are guarded with #if LIBAVUTIL_VERSION_MAJOR >= 60
+to preserve backward compatibility with older FFmpeg versions.
+---
+ src/libtorio/ffmpeg/stream_reader/conversion.cpp    |  4 ++++
+ .../ffmpeg/stream_writer/encode_process.cpp         | 10 ++++++++--
+ .../ffmpeg/stream_writer/tensor_converter.cpp       | 13 +++++++++++--
+ 3 files changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/src/libtorio/ffmpeg/stream_reader/conversion.cpp b/src/libtorio/ffmpeg/stream_reader/conversion.cpp
+index c762bc3f..9a41f47b 100644
+--- a/src/libtorio/ffmpeg/stream_reader/conversion.cpp
++++ b/src/libtorio/ffmpeg/stream_reader/conversion.cpp
+@@ -36,7 +36,11 @@ void AudioConverter<dtype, is_planar>::convert(
+     const AVFrame* src,
+     torch::Tensor& dst) {
+   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(src);
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(num_channels == src->ch_layout.nb_channels);
++#else
+   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(num_channels == src->channels);
++#endif
+ 
+   constexpr int bps = []() {
+     switch (dtype) {
+diff --git a/src/libtorio/ffmpeg/stream_writer/encode_process.cpp b/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
+index 9fce0ac9..34f53536 100644
+--- a/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
++++ b/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
+@@ -701,16 +701,22 @@ AVFramePtr get_audio_frame(
+     int nb_samples) {
+   AVFramePtr frame{alloc_avframe()};
+   frame->format = format;
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++  av_channel_layout_from_mask(&frame->ch_layout, channel_layout);
++#else
+   frame->channel_layout = channel_layout;
++#endif
+   frame->sample_rate = sample_rate;
+   frame->nb_samples = nb_samples;
+   int ret = av_frame_get_buffer(frame, 0);
+   TORCH_CHECK(
+       ret >= 0, "Error allocating the source audio frame:", av_err2string(ret));
+ 
+-  // Note: `channels` attribute is not required for encoding, but
+-  // TensorConverter refers to it
++#if LIBAVUTIL_VERSION_MAJOR < 60
++  // TensorConverter refers to `channels` on pre-8.0 FFmpeg;
++  // on 8.0+ it reads ch_layout.nb_channels instead.
+   frame->channels = num_channels;
++#endif
+   frame->pts = 0;
+   return frame;
+ }
+diff --git a/src/libtorio/ffmpeg/stream_writer/tensor_converter.cpp b/src/libtorio/ffmpeg/stream_writer/tensor_converter.cpp
+index 097cae17..c6544ca1 100644
+--- a/src/libtorio/ffmpeg/stream_writer/tensor_converter.cpp
++++ b/src/libtorio/ffmpeg/stream_writer/tensor_converter.cpp
+@@ -29,10 +29,15 @@ void validate_audio_input(
+       t.dtype().toScalarType());
+   TORCH_CHECK(t.device().is_cpu(), "Input tensor has to be on CPU.");
+   TORCH_CHECK(t.dim() == 2, "Input Tensor has to be 2D.");
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++  const int buf_channels = buffer->ch_layout.nb_channels;
++#else
++  const int buf_channels = buffer->channels;
++#endif
+   TORCH_CHECK(
+-      t.size(1) == buffer->channels,
++      t.size(1) == buf_channels,
+       "Expected waveform with ",
+-      buffer->channels,
++      buf_channels,
+       " channels. Found ",
+       t.size(1));
+ }
+@@ -40,7 +45,11 @@ void validate_audio_input(
+ // 2D (time, channel) and contiguous.
+ void convert_func_(const torch::Tensor& chunk, AVFrame* buffer) {
+   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(chunk.dim() == 2);
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(chunk.size(1) == buffer->ch_layout.nb_channels);
++#else
+   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(chunk.size(1) == buffer->channels);
++#endif
+ 
+   // https://ffmpeg.org/doxygen/4.1/muxing_8c_source.html#l00334
+   if (!av_frame_is_writable(buffer)) {
+-- 
+2.50.1 (Apple Git-155)
+
