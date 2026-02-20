@@ -22,6 +22,7 @@ source:
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
+    - patches/0003-Fix-FFmpeg-8.0-libavfilter-11-compatibility-in-filte.patch
 
 build:
   number: {{ build }}

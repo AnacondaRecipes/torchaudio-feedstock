@@ -1,0 +1,118 @@
+From c0c189a64f715109155d74bcebfe7d6a79b27218 Mon Sep 17 00:00:00 2001
+From: Jamie Robertson <jamierobertsongames@gmail.com>
+Date: Fri, 20 Feb 2026 14:45:32 +0000
+Subject: [PATCH] Fix FFmpeg 8.0 (libavfilter 11) compatibility in
+ filter_graph.cpp
+
+FFmpeg 8.0 removed several deprecated fields from the public
+AVFilterLink struct (hw_frames_ctx, frame_rate, channel_layout)
+and the av_get_channel_layout_nb_channels() function.
+
+- Use av_buffersrc_parameters_set() to set hw_frames_ctx on the
+  buffersrc context instead of assigning directly to the link.
+  The new API makes its own ref, so unref the caller's copy.
+- Fix broken version guard for ch_layout vs channel_layout: the
+  condition (MAJOR >= 8 && MINOR >= 44) fails when MAJOR > 8 and
+  MINOR resets, falling through to the removed API.
+- Use avfilter_link_get_hw_frames_ctx() (added in lavfi 10.10) to
+  read hw_frames_ctx from filter links, with proper av_buffer_unref.
+- Use av_buffersink_get_frame_rate() instead of l->frame_rate.
+- Fix C++20 warning: remove template-id from Wrapper constructor
+  declaration in ffmpeg.h.
+
+All changes are guarded with #if LIBAVFILTER_VERSION_MAJOR >= 11
+to preserve backward compatibility with older FFmpeg versions.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+---
+ src/libtorio/ffmpeg/ffmpeg.h         |  2 +-
+ src/libtorio/ffmpeg/filter_graph.cpp | 34 ++++++++++++++++++++++++++--
+ 2 files changed, 33 insertions(+), 3 deletions(-)
+
+diff --git a/src/libtorio/ffmpeg/ffmpeg.h b/src/libtorio/ffmpeg/ffmpeg.h
+index 0a680a7d..6c02097d 100644
+--- a/src/libtorio/ffmpeg/ffmpeg.h
++++ b/src/libtorio/ffmpeg/ffmpeg.h
+@@ -58,7 +58,7 @@ class Wrapper {
+ 
+  public:
+   Wrapper() = delete;
+-  explicit Wrapper<T, Deleter>(T* t) : ptr(t) {}
++  explicit Wrapper(T* t) : ptr(t) {}
+   T* operator->() const {
+     return ptr.get();
+   }
+diff --git a/src/libtorio/ffmpeg/filter_graph.cpp b/src/libtorio/ffmpeg/filter_graph.cpp
+index 51c8084f..493cd6c5 100644
+--- a/src/libtorio/ffmpeg/filter_graph.cpp
++++ b/src/libtorio/ffmpeg/filter_graph.cpp
+@@ -165,7 +165,21 @@ void FilterGraph::add_process(const std::string& filter_description) {
+ }
+ 
+ void FilterGraph::create_filter(AVBufferRef* hw_frames_ctx) {
++#if LIBAVFILTER_VERSION_MAJOR >= 11
++  if (hw_frames_ctx) {
++    AVBufferSrcParameters* par = av_buffersrc_parameters_alloc();
++    TORCH_CHECK(par, "Failed to allocate AVBufferSrcParameters.");
++    par->hw_frames_ctx = hw_frames_ctx;
++    int ret = av_buffersrc_parameters_set(buffersrc_ctx, par);
++    av_free(par);
++    av_buffer_unref(&hw_frames_ctx);
++    TORCH_CHECK(
++        ret >= 0,
++        "Failed to set buffersrc hw_frames_ctx: " + av_err2string(ret));
++  }
++#else
+   buffersrc_ctx->outputs[0]->hw_frames_ctx = hw_frames_ctx;
++#endif
+   int ret = avfilter_graph_config(graph, nullptr);
+   TORCH_CHECK(ret >= 0, "Failed to configure the graph: " + av_err2string(ret));
+   // char* desc = avfilter_graph_dump(graph, NULL);
+@@ -186,10 +200,9 @@ FilterGraphOutputInfo FilterGraph::get_output_info() const {
+   switch (l->type) {
+     case AVMEDIA_TYPE_AUDIO: {
+       ret.sample_rate = l->sample_rate;
+-#if LIBAVFILTER_VERSION_MAJOR >= 8 && LIBAVFILTER_VERSION_MINOR >= 44
++#if LIBAVFILTER_VERSION_MAJOR > 8 || (LIBAVFILTER_VERSION_MAJOR == 8 && LIBAVFILTER_VERSION_MINOR >= 44)
+       ret.num_channels = l->ch_layout.nb_channels;
+ #else
+-      // Before FFmpeg 5.1
+       ret.num_channels = av_get_channel_layout_nb_channels(l->channel_layout);
+ #endif
+       break;
+@@ -208,6 +221,18 @@ FilterGraphOutputInfo FilterGraph::get_output_info() const {
+         // We expect that hw_frames_ctx is propagated in such cases, but we do
+         // not know.
+         // TODO: check how scale_cuda interferes.
++#if LIBAVFILTER_VERSION_MAJOR >= 11
++        AVBufferRef* hw_ref = avfilter_link_get_hw_frames_ctx(l);
++        if (!hw_ref) {
++          hw_ref =
++              avfilter_link_get_hw_frames_ctx(buffersrc_ctx->outputs[0]);
++        }
++        TORCH_CHECK(
++            hw_ref, "No hw_frames_ctx on sink or source filter link.");
++        auto* frames_ctx = (AVHWFramesContext*)(hw_ref->data);
++        ret.format = frames_ctx->sw_format;
++        av_buffer_unref(&hw_ref);
++#else
+         auto frames_ctx = [&]() -> AVHWFramesContext* {
+           if (l->hw_frames_ctx) {
+             return (AVHWFramesContext*)(l->hw_frames_ctx->data);
+@@ -216,8 +241,13 @@ FilterGraphOutputInfo FilterGraph::get_output_info() const {
+                                           ->hw_frames_ctx->data);
+         }();
+         ret.format = frames_ctx->sw_format;
++#endif
+       }
++#if LIBAVFILTER_VERSION_MAJOR >= 11
++      ret.frame_rate = av_buffersink_get_frame_rate(buffersink_ctx);
++#else
+       ret.frame_rate = l->frame_rate;
++#endif
+       ret.height = l->h;
+       ret.width = l->w;
+       break;
+-- 
+2.50.1 (Apple Git-155)
+
