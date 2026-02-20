@@ -1,0 +1,31 @@
+From 0cbbff799f1d611a6d24006d8bd6ceeba134237f Mon Sep 17 00:00:00 2001
+From: Jamie Robertson <jamierobertsongames@gmail.com>
+Date: Fri, 20 Feb 2026 16:12:28 +0000
+Subject: [PATCH] Fix FFmpeg 8.0 rename of AVCodecContext.frame_number to
+ frame_num
+
+FFmpeg 8.0 (libavcodec 62) renamed AVCodecContext.frame_number to
+AVCodecContext.frame_num. Guard with LIBAVCODEC_VERSION_MAJOR >= 62.
+---
+ src/libtorio/ffmpeg/stream_reader/stream_processor.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp b/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp
+index fc81eea5..6ac4d1bc 100644
+--- a/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp
++++ b/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp
+@@ -344,7 +344,11 @@ int StreamProcessor::process_packet(AVPacket* packet) {
+         // This is because they might be intra-frames not in chronological
+         // order. In this case, we use received frames as-is in the order they
+         // are received.
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++        frame->pts = codec_ctx->frame_num + 1;
++#else
+         frame->pts = codec_ctx->frame_number + 1;
++#endif
+       } else {
+         frame->pts = frame->best_effort_timestamp;
+       }
+-- 
+2.50.1 (Apple Git-155)
+

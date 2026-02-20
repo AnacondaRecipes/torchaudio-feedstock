@@ -25,6 +25,7 @@ source:
     - patches/0003-Fix-FFmpeg-8.0-libavfilter-11-compatibility-in-filte.patch
     - patches/0004-Fix-FFmpeg-8.0-removal-of-AVFrame.channels-and-chann.patch
     - patches/0005-Fix-FFmpeg-8.0-removal-of-AVCodecContext-AVCodecPara.patch
+    - patches/0006-Fix-FFmpeg-8.0-rename-of-AVCodecContext.frame_number.patch
 
 build:
   number: {{ build }}
