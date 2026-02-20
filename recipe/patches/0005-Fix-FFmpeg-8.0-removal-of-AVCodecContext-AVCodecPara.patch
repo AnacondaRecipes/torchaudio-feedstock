@@ -1,0 +1,105 @@
+From 43ab34dab94e5f02fc5d5c9cb982cc4e95e44063 Mon Sep 17 00:00:00 2001
+From: Jamie Robertson <jamierobertsongames@gmail.com>
+Date: Fri, 20 Feb 2026 15:56:23 +0000
+Subject: [PATCH] Fix FFmpeg 8.0 removal of AVCodecContext/AVCodecParameters
+ channel fields
+
+FFmpeg 8.0 (libavutil 60) removed the deprecated channel_layout
+(uint64 bitmask) and channels (int) fields from AVCodecContext and
+AVCodecParameters. Also removed: av_get_channel_layout_nb_channels()
+and av_get_default_channel_layout(). The replacement is the
+AVChannelLayout ch_layout struct and its associated API.
+
+- post_process.cpp: extract bitmask via ch_layout.u.mask for the
+  lambda capture passed to add_audio_src().
+- encode_process.cpp: replace codec_ctx->channels/channel_layout
+  assignment with av_channel_layout_from_mask().
+- stream_processor.cpp: replace channel_layout fallback logic with
+  ch_layout.order == AV_CHANNEL_ORDER_UNSPEC check and
+  av_channel_layout_default().
+- stream_reader.cpp: replace codecpar->channels with
+  codecpar->ch_layout.nb_channels.
+
+All changes are guarded with #if LIBAVUTIL_VERSION_MAJOR >= 60
+to preserve backward compatibility with older FFmpeg versions.
+---
+ src/libtorio/ffmpeg/stream_reader/post_process.cpp     | 4 ++++
+ src/libtorio/ffmpeg/stream_reader/stream_processor.cpp | 7 +++++++
+ src/libtorio/ffmpeg/stream_reader/stream_reader.cpp    | 4 ++++
+ src/libtorio/ffmpeg/stream_writer/encode_process.cpp   | 4 ++++
+ 4 files changed, 19 insertions(+)
+
+diff --git a/src/libtorio/ffmpeg/stream_reader/post_process.cpp b/src/libtorio/ffmpeg/stream_reader/post_process.cpp
+index f2cd31fa..532c219e 100644
+--- a/src/libtorio/ffmpeg/stream_reader/post_process.cpp
++++ b/src/libtorio/ffmpeg/stream_reader/post_process.cpp
+@@ -19,7 +19,11 @@ FilterGraphFactory get_audio_factory(
+   return [fmt = codec_ctx->sample_fmt,
+           time_base,
+           rate = codec_ctx->sample_rate,
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++          channel_layout = codec_ctx->ch_layout.u.mask](
++#else
+           channel_layout = codec_ctx->channel_layout](
++#endif
+              const std::string& filter_desc) -> FilterGraph {
+     FilterGraph f;
+     f.add_audio_src(fmt, time_base, rate, channel_layout);
+diff --git a/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp b/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp
+index d11da429..fc81eea5 100644
+--- a/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp
++++ b/src/libtorio/ffmpeg/stream_reader/stream_processor.cpp
+@@ -140,10 +140,17 @@ void open_codec(
+     av_dict_set(&opts, "threads", "1", 0);
+   }
+ 
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++  if (codec_ctx->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC) {
++    av_channel_layout_default(
++        &codec_ctx->ch_layout, codec_ctx->ch_layout.nb_channels);
++  }
++#else
+   if (!codec_ctx->channel_layout) {
+     codec_ctx->channel_layout =
+         av_get_default_channel_layout(codec_ctx->channels);
+   }
++#endif
+ 
+   int ret = avcodec_open2(codec_ctx, codec_ctx->codec, &opts);
+   clean_up_dict(opts);
+diff --git a/src/libtorio/ffmpeg/stream_reader/stream_reader.cpp b/src/libtorio/ffmpeg/stream_reader/stream_reader.cpp
+index cdea4205..edd8ef47 100644
+--- a/src/libtorio/ffmpeg/stream_reader/stream_reader.cpp
++++ b/src/libtorio/ffmpeg/stream_reader/stream_reader.cpp
+@@ -162,7 +162,11 @@ SrcStreamInfo StreamingMediaDecoder::get_src_stream_info(int i) const {
+         ret.fmt_name = av_get_sample_fmt_name(smp_fmt);
+       }
+       ret.sample_rate = static_cast<double>(codecpar->sample_rate);
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++      ret.num_channels = codecpar->ch_layout.nb_channels;
++#else
+       ret.num_channels = codecpar->channels;
++#endif
+       break;
+     }
+     case AVMEDIA_TYPE_VIDEO: {
+diff --git a/src/libtorio/ffmpeg/stream_writer/encode_process.cpp b/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
+index 34f53536..06683f6c 100644
+--- a/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
++++ b/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
+@@ -374,8 +374,12 @@ void configure_audio_codec_ctx(
+   codec_ctx->sample_fmt = format;
+   codec_ctx->sample_rate = sample_rate;
+   codec_ctx->time_base = av_inv_q(av_d2q(sample_rate, 1 << 24));
++#if LIBAVUTIL_VERSION_MAJOR >= 60
++  av_channel_layout_from_mask(&codec_ctx->ch_layout, channel_layout);
++#else
+   codec_ctx->channels = av_get_channel_layout_nb_channels(channel_layout);
+   codec_ctx->channel_layout = channel_layout;
++#endif
+ 
+   // Set optional stuff
+   if (codec_config) {
+-- 
+2.50.1 (Apple Git-155)
+
