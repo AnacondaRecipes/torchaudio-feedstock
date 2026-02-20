@@ -64,6 +64,7 @@ requirements:
     - wheel
     - pip
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
+    - libtorch ={{ version }}.*=*{{ gpu_variant }}*
     # pybind11 2.13 has py314 support
     - pybind11 2.12
     - ffmpeg {{ ffmpeg }}
