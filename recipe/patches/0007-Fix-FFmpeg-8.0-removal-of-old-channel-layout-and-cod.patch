@@ -1,0 +1,334 @@
+From 1e30f8ab4904ccddde1c03e9c635af87b3bb91de Mon Sep 17 00:00:00 2001
+From: Jamie Robertson <jamierobertsongames@gmail.com>
+Date: Sun, 22 Feb 2026 07:49:49 +0000
+Subject: [PATCH] Fix FFmpeg 8.0 removal of old channel layout and codec config
+ APIs
+
+FFmpeg 8.0 (libavcodec 62) removed AVCodec.channel_layouts,
+av_get_channel_layout_nb_channels(), av_get_channel_name(),
+av_get_default_channel_layout(), and deprecated direct access to
+AVCodec.sample_fmts, supported_samplerates, pix_fmts, and
+supported_framerates.
+
+Channel layout helpers rewritten for new AVChannelLayout API:
+- get_supported_channels() now takes AVChannelLayout* array with
+  count, uses av_channel_layout_describe() for human-readable names.
+- get_channel_layout() uses avcodec_get_supported_config() with
+  AV_CODEC_CONFIG_CHANNEL_LAYOUT to query codec capabilities and
+  returns uint64_t bitmask extracted from AVChannelLayout.u.mask.
+- av_get_default_channel_layout() replaced with
+  av_channel_layout_default() throughout get_audio_encode_process.
+
+Codec config queries migrated to avcodec_get_supported_config():
+- Sample formats: AV_CODEC_CONFIG_SAMPLE_FORMAT
+- Sample rates: AV_CODEC_CONFIG_SAMPLE_RATE
+- Pixel formats: AV_CODEC_CONFIG_PIX_FORMAT
+- Frame rates: AV_CODEC_CONFIG_FRAME_RATE
+
+Also refactored supported_sample_rate() to take const int* instead
+of const AVCodec* to decouple it from direct codec field access.
+
+All changes guarded with #if LIBAVCODEC_VERSION_MAJOR >= 62 for
+backward compatibility with older FFmpeg versions.
+---
+ .../ffmpeg/stream_writer/encode_process.cpp   | 157 ++++++++++++++----
+ 1 file changed, 128 insertions(+), 29 deletions(-)
+
+diff --git a/src/libtorio/ffmpeg/stream_writer/encode_process.cpp b/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
+index 06683f6c..0324f486 100644
+--- a/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
++++ b/src/libtorio/ffmpeg/stream_writer/encode_process.cpp
+@@ -226,31 +226,39 @@ AVSampleFormat get_enc_fmt(
+     AVSampleFormat src_fmt,
+     const std::optional<std::string>& encoder_format,
+     const AVCodec* codec) {
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++  const AVSampleFormat* sample_fmts = nullptr;
++  avcodec_get_supported_config(
++      nullptr, codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0,
++      (const void**)&sample_fmts, nullptr);
++#else
++  const AVSampleFormat* sample_fmts = codec->sample_fmts;
++#endif
+   if (encoder_format) {
+     auto& enc_fmt_val = encoder_format.value();
+     auto fmt = av_get_sample_fmt(enc_fmt_val.c_str());
+     TORCH_CHECK(
+         fmt != AV_SAMPLE_FMT_NONE, "Unknown sample format: ", enc_fmt_val);
+     TORCH_CHECK(
+-        supported_sample_fmt(fmt, codec->sample_fmts),
++        supported_sample_fmt(fmt, sample_fmts),
+         codec->name,
+         " does not support ",
+         encoder_format.value(),
+         " format. Supported values are; ",
+-        get_supported_formats(codec->sample_fmts));
++        get_supported_formats(sample_fmts));
+     return fmt;
+   }
+-  if (codec->sample_fmts) {
+-    return codec->sample_fmts[0];
++  if (sample_fmts) {
++    return sample_fmts[0];
+   }
+   return src_fmt;
+ };
+ 
+-bool supported_sample_rate(const int sample_rate, const AVCodec* codec) {
+-  if (!codec->supported_samplerates) {
++bool supported_sample_rate(const int sample_rate, const int* rates) {
++  if (!rates) {
+     return true;
+   }
+-  const int* it = codec->supported_samplerates;
++  const int* it = rates;
+   while (*it) {
+     if (sample_rate == *it) {
+       return true;
+@@ -289,6 +297,14 @@ int get_enc_sr(
+     }
+     return 16'000;
+   }
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++  const int* rates = nullptr;
++  avcodec_get_supported_config(
++      nullptr, codec, AV_CODEC_CONFIG_SAMPLE_RATE, 0,
++      (const void**)&rates, nullptr);
++#else
++  const int* rates = codec->supported_samplerates;
++#endif
+   if (encoder_sample_rate) {
+     const int& encoder_sr = encoder_sample_rate.value();
+     TORCH_CHECK(
+@@ -296,21 +312,81 @@ int get_enc_sr(
+         "Encoder sample rate must be positive. Found: ",
+         encoder_sr);
+     TORCH_CHECK(
+-        supported_sample_rate(encoder_sr, codec),
++        supported_sample_rate(encoder_sr, rates),
+         codec->name,
+         " does not support sample rate ",
+         encoder_sr,
+         ". Supported values are; ",
+-        get_supported_samplerates(codec->supported_samplerates));
++        get_supported_samplerates(rates));
+     return encoder_sr;
+   }
+-  if (codec->supported_samplerates &&
+-      !supported_sample_rate(src_sample_rate, codec)) {
+-    return codec->supported_samplerates[0];
++  if (rates && !supported_sample_rate(src_sample_rate, rates)) {
++    return rates[0];
+   }
+   return src_sample_rate;
+ }
+ 
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++
++std::string get_supported_channels(
++    const AVChannelLayout* layouts, int count) {
++  std::vector<std::string> names;
++  for (int i = 0; i < count; ++i) {
++    char buf[64];
++    av_channel_layout_describe(&layouts[i], buf, sizeof(buf));
++    std::stringstream ss;
++    ss << layouts[i].nb_channels << " (" << buf << ")";
++    names.emplace_back(ss.str());
++  }
++  return c10::Join(", ", names);
++}
++
++uint64_t get_channel_layout(
++    const uint64_t src_ch_layout,
++    const std::optional<int> enc_num_channels,
++    const AVCodec* codec) {
++  const AVChannelLayout* layouts = nullptr;
++  int num_layouts = 0;
++  avcodec_get_supported_config(
++      nullptr, codec, AV_CODEC_CONFIG_CHANNEL_LAYOUT, 0,
++      (const void**)&layouts, &num_layouts);
++
++  if (enc_num_channels) {
++    const int& val = enc_num_channels.value();
++    TORCH_CHECK(
++        val > 0, "The number of channels must be greater than 0. Found: ", val);
++    if (!layouts || num_layouts == 0) {
++      AVChannelLayout ch = {};
++      av_channel_layout_default(&ch, val);
++      return ch.u.mask;
++    }
++    for (int i = 0; i < num_layouts; ++i) {
++      if (layouts[i].nb_channels == val) {
++        return layouts[i].u.mask;
++      }
++    }
++    TORCH_CHECK(
++        false,
++        "Codec ",
++        codec->name,
++        " does not support a channel layout consists of ",
++        val,
++        " channels. Supported values are: ",
++        get_supported_channels(layouts, num_layouts));
++  }
++  if (!layouts || num_layouts == 0) {
++    return src_ch_layout;
++  }
++  for (int i = 0; i < num_layouts; ++i) {
++    if (layouts[i].u.mask == src_ch_layout) {
++      return src_ch_layout;
++    }
++  }
++  return layouts[0].u.mask;
++}
++
++#else
++
+ std::string get_supported_channels(const uint64_t* channel_layouts) {
+   std::vector<std::string> names;
+   while (*channel_layouts) {
+@@ -327,7 +403,6 @@ uint64_t get_channel_layout(
+     const uint64_t src_ch_layout,
+     const std::optional<int> enc_num_channels,
+     const AVCodec* codec) {
+-  // If the override is presented, and if it is supported by codec, we use it.
+   if (enc_num_channels) {
+     const int& val = enc_num_channels.value();
+     TORCH_CHECK(
+@@ -349,22 +424,19 @@ uint64_t get_channel_layout(
+         " channels. Supported values are: ",
+         get_supported_channels(codec->channel_layouts));
+   }
+-  // If the codec does not have restriction on channel layout, we reuse the
+-  // source channel layout
+   if (!codec->channel_layouts) {
+     return src_ch_layout;
+   }
+-  // If the codec has restriction, and source layout is supported, we reuse the
+-  // source channel layout
+   for (const uint64_t* it = codec->channel_layouts; *it; ++it) {
+     if (*it == src_ch_layout) {
+       return src_ch_layout;
+     }
+   }
+-  // Use the default layout of the codec.
+   return codec->channel_layouts[0];
+ }
+ 
++#endif
++
+ void configure_audio_codec_ctx(
+     AVCodecContext* codec_ctx,
+     AVSampleFormat format,
+@@ -427,20 +499,28 @@ AVPixelFormat get_enc_fmt(
+     AVPixelFormat src_fmt,
+     const std::optional<std::string>& encoder_format,
+     const AVCodec* codec) {
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++  const AVPixelFormat* pix_fmts = nullptr;
++  avcodec_get_supported_config(
++      nullptr, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0,
++      (const void**)&pix_fmts, nullptr);
++#else
++  const AVPixelFormat* pix_fmts = codec->pix_fmts;
++#endif
+   if (encoder_format) {
+     const auto& val = encoder_format.value();
+     auto fmt = av_get_pix_fmt(val.c_str());
+     TORCH_CHECK(
+-        supported_pix_fmt(fmt, codec->pix_fmts),
++        supported_pix_fmt(fmt, pix_fmts),
+         codec->name,
+         " does not support ",
+         val,
+         " format. Supported values are; ",
+-        get_supported_formats(codec->pix_fmts));
++        get_supported_formats(pix_fmts));
+     return fmt;
+   }
+-  if (codec->pix_fmts) {
+-    return codec->pix_fmts[0];
++  if (pix_fmts) {
++    return pix_fmts[0];
+   }
+   return src_fmt;
+ }
+@@ -461,6 +541,14 @@ AVRational get_enc_rate(
+     AVRational src_rate,
+     const std::optional<double>& encoder_sample_rate,
+     const AVCodec* codec) {
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++  const AVRational* rates = nullptr;
++  avcodec_get_supported_config(
++      nullptr, codec, AV_CODEC_CONFIG_FRAME_RATE, 0,
++      (const void**)&rates, nullptr);
++#else
++  const AVRational* rates = codec->supported_framerates;
++#endif
+   if (encoder_sample_rate) {
+     const double& enc_rate = encoder_sample_rate.value();
+     TORCH_CHECK(
+@@ -469,25 +557,22 @@ AVRational get_enc_rate(
+         enc_rate);
+     AVRational rate = av_d2q(enc_rate, 1 << 24);
+     TORCH_CHECK(
+-        supported_frame_rate(rate, codec->supported_framerates),
++        supported_frame_rate(rate, rates),
+         codec->name,
+         " does not support frame rate: ",
+         enc_rate,
+         ". Supported values are; ",
+         [&]() {
+           std::vector<std::string> ret;
+-          for (auto r = codec->supported_framerates;
+-               !(r->num == 0 && r->den == 0);
+-               ++r) {
++          for (auto r = rates; !(r->num == 0 && r->den == 0); ++r) {
+             ret.push_back(c10::Join("/", std::array<int, 2>{r->num, r->den}));
+           }
+           return c10::Join(", ", ret);
+         }());
+     return rate;
+   }
+-  if (codec->supported_framerates &&
+-      !supported_frame_rate(src_rate, codec->supported_framerates)) {
+-    return codec->supported_framerates[0];
++  if (rates && !supported_frame_rate(src_rate, rates)) {
++    return rates[0];
+   }
+   return src_rate;
+ }
+@@ -777,8 +862,16 @@ EncodeProcess get_audio_encode_process(
+   const AVSampleFormat src_fmt = (disable_converter)
+       ? av_get_sample_fmt(format.c_str())
+       : get_src_sample_fmt(format);
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++  const auto src_ch_layout = [&]() -> uint64_t {
++    AVChannelLayout ch = {};
++    av_channel_layout_default(&ch, src_num_channels);
++    return ch.u.mask;
++  }();
++#else
+   const auto src_ch_layout =
+       static_cast<uint64_t>(av_get_default_channel_layout(src_num_channels));
++#endif
+ 
+   // 2. Fetch codec from default or override
+   TORCH_CHECK(
+@@ -798,7 +891,13 @@ EncodeProcess get_audio_encode_process(
+       // https://github.com/FFmpeg/FFmpeg/blob/0684e58886881a998f1a7b510d73600ff1df2b90/libavcodec/vorbisenc.c#L1277
+       // This is the case for at least until FFmpeg 6.0, so it will be
+       // like this for a while.
++#if LIBAVCODEC_VERSION_MAJOR >= 62
++      AVChannelLayout vorbis_ch = {};
++      av_channel_layout_default(&vorbis_ch, 2);
++      return vorbis_ch.u.mask;
++#else
+       return static_cast<uint64_t>(av_get_default_channel_layout(2));
++#endif
+     }
+     return get_channel_layout(src_ch_layout, encoder_num_channels, codec);
+   }();
+-- 
+2.50.1 (Apple Git-155)
+

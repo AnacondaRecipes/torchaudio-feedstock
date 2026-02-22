@@ -26,6 +26,7 @@ source:
     - patches/0004-Fix-FFmpeg-8.0-removal-of-AVFrame.channels-and-chann.patch
     - patches/0005-Fix-FFmpeg-8.0-removal-of-AVCodecContext-AVCodecPara.patch
     - patches/0006-Fix-FFmpeg-8.0-rename-of-AVCodecContext.frame_number.patch
+    - patches/0007-Fix-FFmpeg-8.0-removal-of-old-channel-layout-and-cod.patch
 
 build:
   number: {{ build }}
