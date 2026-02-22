@@ -118,9 +118,10 @@ requirements:
 {% set tests_to_skip = tests_to_skip + " or test_formats_5_mp3" %}  # [win]
 
 
+# Downloads large models at runtime, exhausting CI/CD disk space
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/wav2vec2_pipeline_test.py" %}
+
 {% set integration_tests_to_skip = "_not_a_real_test" %}
-# Segfaulting when building with python 3.13. Passed on a G4 dev instance. Likely OOM.
-{% set integration_tests_to_skip = integration_tests_to_skip + " or test_finetune_asr_model " %}  # [win and py>312]
 
 test:
   source_files:
