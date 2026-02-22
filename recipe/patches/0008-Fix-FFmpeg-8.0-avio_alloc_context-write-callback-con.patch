@@ -1,0 +1,89 @@
+From 5bf08c2c1625d6ca3d1fbc60a0c5c092ab2875ec Mon Sep 17 00:00:00 2001
+From: Jamie Robertson <jamierobertsongames@gmail.com>
+Date: Sun, 22 Feb 2026 09:52:38 +0000
+Subject: [PATCH] Fix FFmpeg 8.0 avio_alloc_context write callback const
+ signature
+
+FFmpeg 8.0 (libavformat 62) changed the write_packet callback
+parameter of avio_alloc_context() from uint8_t* to const uint8_t*.
+Update the function pointer type in all 5 declarations/definitions
+(get_io_context, CustomOutput ctor, StreamingMediaEncoderCustomIO
+ctor, and their header declarations).
+
+Guarded with #if LIBAVFORMAT_VERSION_MAJOR >= 62.
+---
+ src/libtorio/ffmpeg/stream_writer/stream_writer.cpp | 12 ++++++++++++
+ src/libtorio/ffmpeg/stream_writer/stream_writer.h   |  8 ++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/src/libtorio/ffmpeg/stream_writer/stream_writer.cpp b/src/libtorio/ffmpeg/stream_writer/stream_writer.cpp
+index 95eff147..095bd15c 100644
+--- a/src/libtorio/ffmpeg/stream_writer/stream_writer.cpp
++++ b/src/libtorio/ffmpeg/stream_writer/stream_writer.cpp
+@@ -355,7 +355,11 @@ namespace {
+ AVIOContext* get_io_context(
+     void* opaque,
+     int buffer_size,
++#if LIBAVFORMAT_VERSION_MAJOR >= 62
++    int (*write_packet)(void* opaque, const uint8_t* buf, int buf_size),
++#else
+     int (*write_packet)(void* opaque, uint8_t* buf, int buf_size),
++#endif
+     int64_t (*seek)(void* opaque, int64_t offset, int whence)) {
+   unsigned char* buffer = static_cast<unsigned char*>(av_malloc(buffer_size));
+   TORCH_CHECK(buffer, "Failed to allocate buffer.");
+@@ -372,7 +376,11 @@ AVIOContext* get_io_context(
+ CustomOutput::CustomOutput(
+     void* opaque,
+     int buffer_size,
++#if LIBAVFORMAT_VERSION_MAJOR >= 62
++    int (*write_packet)(void* opaque, const uint8_t* buf, int buf_size),
++#else
+     int (*write_packet)(void* opaque, uint8_t* buf, int buf_size),
++#endif
+     int64_t (*seek)(void* opaque, int64_t offset, int whence))
+     : io_ctx(get_io_context(opaque, buffer_size, write_packet, seek)) {}
+ } // namespace detail
+@@ -381,7 +389,11 @@ StreamingMediaEncoderCustomIO::StreamingMediaEncoderCustomIO(
+     void* opaque,
+     const std::optional<std::string>& format,
+     int buffer_size,
++#if LIBAVFORMAT_VERSION_MAJOR >= 62
++    int (*write_packet)(void* opaque, const uint8_t* buf, int buf_size),
++#else
+     int (*write_packet)(void* opaque, uint8_t* buf, int buf_size),
++#endif
+     int64_t (*seek)(void* opaque, int64_t offset, int whence))
+     : CustomOutput(opaque, buffer_size, write_packet, seek),
+       StreamingMediaEncoder(io_ctx, format) {}
+diff --git a/src/libtorio/ffmpeg/stream_writer/stream_writer.h b/src/libtorio/ffmpeg/stream_writer/stream_writer.h
+index a646d3f3..6caf7c25 100644
+--- a/src/libtorio/ffmpeg/stream_writer/stream_writer.h
++++ b/src/libtorio/ffmpeg/stream_writer/stream_writer.h
+@@ -299,7 +299,11 @@ struct CustomOutput {
+   CustomOutput(
+       void* opaque,
+       int buffer_size,
++#if LIBAVFORMAT_VERSION_MAJOR >= 62
++      int (*write_packet)(void* opaque, const uint8_t* buf, int buf_size),
++#else
+       int (*write_packet)(void* opaque, uint8_t* buf, int buf_size),
++#endif
+       int64_t (*seek)(void* opaque, int64_t offset, int whence));
+ };
+ } // namespace detail
+@@ -327,7 +331,11 @@ class StreamingMediaEncoderCustomIO : private detail::CustomOutput,
+       void* opaque,
+       const std::optional<std::string>& format,
+       int buffer_size,
++#if LIBAVFORMAT_VERSION_MAJOR >= 62
++      int (*write_packet)(void* opaque, const uint8_t* buf, int buf_size),
++#else
+       int (*write_packet)(void* opaque, uint8_t* buf, int buf_size),
++#endif
+       int64_t (*seek)(void* opaque, int64_t offset, int whence) = nullptr);
+ };
+ 
+-- 
+2.50.1 (Apple Git-155)
+
