@@ -1,4 +1,4 @@
-From 5bf08c2c1625d6ca3d1fbc60a0c5c092ab2875ec Mon Sep 17 00:00:00 2001
+From 2ee9a0594c35ad494b3e98c2685b21f4b7776325 Mon Sep 17 00:00:00 2001
 From: Jamie Robertson <jamierobertsongames@gmail.com>
 Date: Sun, 22 Feb 2026 09:52:38 +0000
 Subject: [PATCH] Fix FFmpeg 8.0 avio_alloc_context write callback const
@@ -12,10 +12,27 @@ ctor, and their header declarations).
 
 Guarded with #if LIBAVFORMAT_VERSION_MAJOR >= 62.
 ---
+ src/libtorio/ffmpeg/pybind/pybind.cpp               |  4 ++++
  src/libtorio/ffmpeg/stream_writer/stream_writer.cpp | 12 ++++++++++++
  src/libtorio/ffmpeg/stream_writer/stream_writer.h   |  8 ++++++++
- 2 files changed, 20 insertions(+)
+ 3 files changed, 24 insertions(+)
 
+diff --git a/src/libtorio/ffmpeg/pybind/pybind.cpp b/src/libtorio/ffmpeg/pybind/pybind.cpp
+index 3f954a2a..5cb7e40a 100644
+--- a/src/libtorio/ffmpeg/pybind/pybind.cpp
++++ b/src/libtorio/ffmpeg/pybind/pybind.cpp
+@@ -135,7 +135,11 @@ static int read_func(void* opaque, uint8_t* buf, int buf_size) {
+   return num_read == 0 ? AVERROR_EOF : num_read;
+ }
+ 
++#if LIBAVFORMAT_VERSION_MAJOR >= 62
++static int write_func(void* opaque, const uint8_t* buf, int buf_size) {
++#else
+ static int write_func(void* opaque, uint8_t* buf, int buf_size) {
++#endif
+   FileObj* fileobj = static_cast<FileObj*>(opaque);
+   buf_size = FFMIN(buf_size, fileobj->buffer_size);
+ 
 diff --git a/src/libtorio/ffmpeg/stream_writer/stream_writer.cpp b/src/libtorio/ffmpeg/stream_writer/stream_writer.cpp
 index 95eff147..095bd15c 100644
 --- a/src/libtorio/ffmpeg/stream_writer/stream_writer.cpp
