@@ -18,7 +18,7 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 31de856d3daa5c1db983eb5b964ed33d54be6e5038d6504181fe51e2d6cc6448  # [ version == "2.7.0" ]
+  sha256: 31de856d3daa5c1db983eb5b964ed33d54be6e5038d6504181fe51e2d6cc6448
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
