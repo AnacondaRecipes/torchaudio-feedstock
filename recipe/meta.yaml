@@ -33,7 +33,7 @@ source:
 build:
   number: {{ build }}
   # py314 support in 2.9.0
-  skip: true                        # [py>313 or not osx]
+  skip: true                        # [py>313 or not win]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
@@ -52,7 +52,8 @@ build:
     - "**/libtorchaudio_ffmpeg.pyd" # [win]
     - "**/libtorchaudio.pyd"        # [win]
     - "**/libtorio_ffmpeg.pyd"      # [win]
-    - "**/libctc_prefix_decoder.so" # [gpu_variant == "cuda"]
+    - "**/libctc_prefix_decoder.so"  # [gpu_variant == "cuda"]
+    - "**/libctc_prefix_decoder.pyd" # [gpu_variant == "cuda"]
 
 requirements:
   build:
