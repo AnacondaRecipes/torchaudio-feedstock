@@ -22,13 +22,13 @@ source:
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
-    - patches/0003-Fix-FFmpeg-8.0-libavfilter-11-compatibility-in-filte.patch
-    - patches/0004-Fix-FFmpeg-8.0-removal-of-AVFrame.channels-and-chann.patch
-    - patches/0005-Fix-FFmpeg-8.0-removal-of-AVCodecContext-AVCodecPara.patch
-    - patches/0006-Fix-FFmpeg-8.0-rename-of-AVCodecContext.frame_number.patch
-    - patches/0007-Fix-FFmpeg-8.0-removal-of-old-channel-layout-and-cod.patch
-    - patches/0008-Fix-FFmpeg-8.0-avio_alloc_context-write-callback-con.patch
-    - patches/0009-Fix-FFmpeg-8.0-rename-of-channels-demuxer-option-to-.patch
+    # - patches/0003-Fix-FFmpeg-8.0-libavfilter-11-compatibility-in-filte.patch
+    # - patches/0004-Fix-FFmpeg-8.0-removal-of-AVFrame.channels-and-chann.patch
+    # - patches/0005-Fix-FFmpeg-8.0-removal-of-AVCodecContext-AVCodecPara.patch
+    # - patches/0006-Fix-FFmpeg-8.0-rename-of-AVCodecContext.frame_number.patch
+    # - patches/0007-Fix-FFmpeg-8.0-removal-of-old-channel-layout-and-cod.patch
+    # - patches/0008-Fix-FFmpeg-8.0-avio_alloc_context-write-callback-con.patch
+    # - patches/0009-Fix-FFmpeg-8.0-rename-of-channels-demuxer-option-to-.patch
 
 build:
   number: {{ build }}
