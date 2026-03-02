@@ -35,6 +35,8 @@ build:
     - "**/libtorch_python.so"       # [linux]
     - "**/libtorchaudio_ffmpeg.so"  # [linux or osx]
     - "**/libtorchaudio.so"         # [linux or osx]
+    - "**/libtorchaudio_sox.so"    # [linux or osx]
+    - "**/libsox.so"              # [linux or osx]
     - "**/libtorio_ffmpeg.so"       # [unix]
     - "**/libc10.dylib"             # [osx]
     - "**/libtorch_cpu.dylib"       # [osx]
