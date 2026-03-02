@@ -22,13 +22,6 @@ source:
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
-    # - patches/0003-Fix-FFmpeg-8.0-libavfilter-11-compatibility-in-filte.patch
-    # - patches/0004-Fix-FFmpeg-8.0-removal-of-AVFrame.channels-and-chann.patch
-    # - patches/0005-Fix-FFmpeg-8.0-removal-of-AVCodecContext-AVCodecPara.patch
-    # - patches/0006-Fix-FFmpeg-8.0-rename-of-AVCodecContext.frame_number.patch
-    # - patches/0007-Fix-FFmpeg-8.0-removal-of-old-channel-layout-and-cod.patch
-    # - patches/0008-Fix-FFmpeg-8.0-avio_alloc_context-write-callback-con.patch
-    # - patches/0009-Fix-FFmpeg-8.0-rename-of-channels-demuxer-option-to-.patch
 
 build:
   number: {{ build }}
@@ -75,7 +68,6 @@ requirements:
     - libtorch ={{ version }}.*=*{{ gpu_variant }}*
     # pybind11 2.13 has py314 support
     - pybind11 2.12
-    - ffmpeg {{ ffmpeg }}
     - llvm-openmp                                 # [osx]
     - cuda-driver-dev                             # [linux and gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
@@ -108,8 +100,10 @@ requirements:
 # ffmpeg is chosen as backend. More investigation would be necessary but this doesn't seem to be a problem with all other
 # occurrences of the load() function
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets/tedlium_test.py" %}
-# skipping this test because of URL errors on osx (these are passing locally though)
-{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/loudness_compliance_test.py" %}  # [osx]
+# these tests download data from the internet which is not available on CI/CD
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/loudness_compliance_test.py" %}
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/source_separation_pipeline_test.py" %}
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/squim_pipeline_test.py" %}
 # stream writer tests fail on windows because another process locks the writing on the output directory (common problem on win)
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/io/stream_writer_test.py" %}  # [win]
 
