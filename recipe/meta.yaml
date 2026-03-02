@@ -35,8 +35,6 @@ build:
     - "**/libtorch_python.so"       # [linux]
     - "**/libtorchaudio_ffmpeg.so"  # [linux or osx]
     - "**/libtorchaudio.so"         # [linux or osx]
-    - "**/libtorchaudio_sox.so"    # [linux or osx]
-    - "**/libsox.so"              # [linux or osx]
     - "**/libtorio_ffmpeg.so"       # [unix]
     - "**/libc10.dylib"             # [osx]
     - "**/libtorch_cpu.dylib"       # [osx]
@@ -83,8 +81,8 @@ requirements:
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
 
-# ignoring soundfile tests because we don't integrate soundfile
-{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
+# ignoring sox tests because sox is disabled
+{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 # these tests hang on osx-64, probably resource exhaustion
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets" %}  # [osx and x86_64]
 # and these are killed on win, probably same reason
@@ -115,6 +113,8 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/wav2vec2_pipeline_test.py" %}
 
 {% set integration_tests_to_skip = "_not_a_real_test" %}
+# RNNT is disabled
+{% set integration_tests_to_skip = integration_tests_to_skip + " or rnnt" %}
 
 test:
   source_files:
@@ -173,6 +173,7 @@ test:
     - scikit-learn
     - pillow
     - expecttest
+    - pysoundfile
 
 
 about:
