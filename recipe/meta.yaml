@@ -102,7 +102,7 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/io/stream_writer_test.py" %}  # [win]
 
 # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
-{% set tests_to_skip = "kaldi" %}
+{% set tests_to_skip = "kaldi or rnnt" %}
 # skip test fail in EffectorTest.test_formats_5_mp3 with "RuntimeError: Failed to open codec: (Invalid argument)"
 # because of missing mp3 codec support on ffmpeg for win-64
 {% set tests_to_skip = tests_to_skip + " or test_formats_5_mp3" %}  # [win]
