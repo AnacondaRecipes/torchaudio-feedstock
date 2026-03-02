@@ -78,13 +78,11 @@ requirements:
     - libcusparse-dev                             # [gpu_variant == "cuda"]
   run:
     - python
-    - {{ pin_compatible('ffmpeg') }}
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
 
-# ignoring sox tests because we don't integrate sox
+# ignoring soundfile tests because we don't integrate soundfile
 {% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
-{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 # these tests hang on osx-64, probably resource exhaustion
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets" %}  # [osx and x86_64]
 # and these are killed on win, probably same reason
@@ -100,10 +98,6 @@ requirements:
 # ffmpeg is chosen as backend. More investigation would be necessary but this doesn't seem to be a problem with all other
 # occurrences of the load() function
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets/tedlium_test.py" %}
-# these tests download data from the internet which is not available on CI/CD
-{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/loudness_compliance_test.py" %}
-{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/source_separation_pipeline_test.py" %}
-{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/squim_pipeline_test.py" %}
 # stream writer tests fail on windows because another process locks the writing on the output directory (common problem on win)
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/io/stream_writer_test.py" %}  # [win]
 
@@ -116,7 +110,6 @@ requirements:
 # skip due ARM w/ JIT kernal generation on aarch64 resulting in a failure on CI
 {% set tests_to_skip = tests_to_skip + " or test_lfilter_shape" %}  # [aarch64]
 
-# Downloads large models at runtime, exhausting CI/CD disk space
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/wav2vec2_pipeline_test.py" %}
 
 {% set integration_tests_to_skip = "_not_a_real_test" %}
