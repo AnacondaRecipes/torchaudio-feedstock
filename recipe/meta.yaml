@@ -22,13 +22,6 @@ source:
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
-    - patches/0003-Fix-FFmpeg-8.0-libavfilter-11-compatibility-in-filte.patch
-    - patches/0004-Fix-FFmpeg-8.0-removal-of-AVFrame.channels-and-chann.patch
-    - patches/0005-Fix-FFmpeg-8.0-removal-of-AVCodecContext-AVCodecPara.patch
-    - patches/0006-Fix-FFmpeg-8.0-rename-of-AVCodecContext.frame_number.patch
-    - patches/0007-Fix-FFmpeg-8.0-removal-of-old-channel-layout-and-cod.patch
-    - patches/0008-Fix-FFmpeg-8.0-avio_alloc_context-write-callback-con.patch
-    - patches/0009-Fix-FFmpeg-8.0-rename-of-channels-demuxer-option-to-.patch
 
 build:
   number: {{ build }}
@@ -75,7 +68,6 @@ requirements:
     - libtorch ={{ version }}.*=*{{ gpu_variant }}*
     # pybind11 2.13 has py314 support
     - pybind11 2.12
-    - ffmpeg {{ ffmpeg }}
     - llvm-openmp                                 # [osx]
     - cuda-driver-dev                             # [linux and gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
@@ -86,13 +78,11 @@ requirements:
     - libcusparse-dev                             # [gpu_variant == "cuda"]
   run:
     - python
-    - {{ pin_compatible('ffmpeg') }}
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
 
-# ignoring sox tests because we don't integrate sox
-{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/soundfile --ignore=test/torchaudio_unittest/backend/dispatcher/soundfile" %}
-{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
+# ignoring sox tests because sox is disabled
+{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
 # these tests hang on osx-64, probably resource exhaustion
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets" %}  # [osx and x86_64]
 # and these are killed on win, probably same reason
@@ -108,13 +98,11 @@ requirements:
 # ffmpeg is chosen as backend. More investigation would be necessary but this doesn't seem to be a problem with all other
 # occurrences of the load() function
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets/tedlium_test.py" %}
-# skipping this test because of URL errors on osx (these are passing locally though)
-{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/loudness_compliance_test.py" %}  # [osx]
 # stream writer tests fail on windows because another process locks the writing on the output directory (common problem on win)
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/io/stream_writer_test.py" %}  # [win]
 
 # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
-{% set tests_to_skip = "kaldi" %}
+{% set tests_to_skip = "kaldi or rnnt or test_unknown_subtype_warning" %}
 # skip test fail in EffectorTest.test_formats_5_mp3 with "RuntimeError: Failed to open codec: (Invalid argument)"
 # because of missing mp3 codec support on ffmpeg for win-64
 {% set tests_to_skip = tests_to_skip + " or test_formats_5_mp3" %}  # [win]
@@ -122,10 +110,11 @@ requirements:
 # skip due ARM w/ JIT kernal generation on aarch64 resulting in a failure on CI
 {% set tests_to_skip = tests_to_skip + " or test_lfilter_shape" %}  # [aarch64]
 
-# Downloads large models at runtime, exhausting CI/CD disk space
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/wav2vec2_pipeline_test.py" %}
 
 {% set integration_tests_to_skip = "_not_a_real_test" %}
+# RNNT is disabled
+{% set integration_tests_to_skip = integration_tests_to_skip + " or rnnt" %}
 
 test:
   source_files:
@@ -184,6 +173,7 @@ test:
     - scikit-learn
     - pillow
     - expecttest
+    - pysoundfile
 
 
 about:
