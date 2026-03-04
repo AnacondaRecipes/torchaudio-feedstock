@@ -33,18 +33,14 @@ build:
     - "**/libc10.so"                # [linux]
     - "**/libtorch_cpu.so"          # [linux]
     - "**/libtorch_python.so"       # [linux]
-    - "**/libtorchaudio_ffmpeg.so"  # [linux or osx]
     - "**/libtorchaudio.so"         # [linux or osx]
-    - "**/libtorio_ffmpeg.so"       # [unix]
     - "**/libc10.dylib"             # [osx]
     - "**/libtorch_cpu.dylib"       # [osx]
     - "**/libtorch_python.dylib"    # [osx]
     - "**/torch_cpu.dll"            # [win]
     - "**/c10.dll"                  # [win]
     - "**/torch_python.dll"         # [win]
-    - "**/libtorchaudio_ffmpeg.pyd" # [win]
     - "**/libtorchaudio.pyd"        # [win]
-    - "**/libtorio_ffmpeg.pyd"      # [win]
     - "**/libctc_prefix_decoder.so"  # [gpu_variant == "cuda"]
     - "**/libctc_prefix_decoder.pyd" # [gpu_variant == "cuda"]
 
@@ -103,9 +99,6 @@ requirements:
 
 # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
 {% set tests_to_skip = "kaldi or rnnt or test_unknown_subtype_warning" %}
-# skip test fail in EffectorTest.test_formats_5_mp3 with "RuntimeError: Failed to open codec: (Invalid argument)"
-# because of missing mp3 codec support on ffmpeg for win-64
-{% set tests_to_skip = tests_to_skip + " or test_formats_5_mp3" %}  # [win]
 
 # skip due ARM w/ JIT kernal generation on aarch64 resulting in a failure on CI
 {% set tests_to_skip = tests_to_skip + " or test_lfilter_shape" %}  # [aarch64]
