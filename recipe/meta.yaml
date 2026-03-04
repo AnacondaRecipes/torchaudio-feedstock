@@ -26,7 +26,7 @@ source:
 build:
   number: {{ build }}
   # py314 support in 2.9.0
-  skip: true                        # [py>313 or not win]
+  skip: true                        # [py>313]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
