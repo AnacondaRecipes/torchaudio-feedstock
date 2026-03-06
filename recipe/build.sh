@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # Common settings for all Unix systems
-export USE_FFMPEG=ON
+export USE_FFMPEG=OFF
 export BUILD_SOX=OFF
+export BUILD_RNNT=0
 export BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON
-export FFMPEG_ROOT=${PREFIX}
+# export FFMPEG_ROOT=${PREFIX}
 
 # Platform-specific settings
 if [[ "${target_platform}" == osx* ]]; then

@@ -15,7 +15,7 @@ Index: audio/tools/setup_helpers/extension.py
          ]
 +        if _USE_CUDA:
 +            cmake_args += [
-+                f"-DCMAKE_CUDA_COMPILER={os.environ.get('PREFIX', '')}/bin/nvcc",
++                f"-DCMAKE_CUDA_COMPILER=nvcc",
 +                f"-DCMAKE_FIND_ROOT_PATH={os.environ.get('PREFIX', '')};{os.environ.get('BUILD_PREFIX', '')}/x86_64-conda-linux-gnu/sysroot;{os.environ.get('PREFIX', '')}/targets/x86_64-linux;{os.environ.get('BUILD_PREFIX', '')}/targets/x86_64-linux",
 +            ]
 +
