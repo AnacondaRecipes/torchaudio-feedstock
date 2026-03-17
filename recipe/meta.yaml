@@ -65,6 +65,7 @@ requirements:
     # pybind11 2.13 has py314 support
     - pybind11 2.12
     - llvm-openmp                                 # [osx]
+    - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
     - cuda-driver-dev                             # [linux and gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
     - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
