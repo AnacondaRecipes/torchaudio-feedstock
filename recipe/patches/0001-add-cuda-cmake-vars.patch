@@ -1,28 +1,31 @@
 From: Daniel Petry <dpetry@anaconda.com>
-Subject: [PATCH] Add CMAKE_FIND_ROOT_PATH for conda CUDA sysroot (Linux only)
+Subject: [PATCH] Add CMAKE_FIND_ROOT_PATH for conda CUDA builds
 
-Adds CMAKE_FIND_ROOT_PATH so CMake can find CUDA libraries in the
-conda sysroot on Linux. Guarded with platform check to avoid applying
-Linux-specific paths on Windows CUDA builds.
+Adds CMAKE_FIND_ROOT_PATH so CMake can find CUDA and torch libraries
+in the conda prefix. On Linux, also adds the conda sysroot paths.
+Uses os.uname().machine for architecture-aware paths on Linux.
 
 ---
- tools/setup_helpers/extension.py | 7 +++++++
- 1 file changed, 7 insertions(+)
+ tools/setup_helpers/extension.py | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
 Index: audio/tools/setup_helpers/extension.py
 ===================================================================
 --- audio.orig/tools/setup_helpers/extension.py
 +++ audio/tools/setup_helpers/extension.py
-@@ -141,6 +141,13 @@
+@@ -141,6 +141,16 @@
              f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
              f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
          ]
-+        if _USE_CUDA and platform.system() == "Linux":
-+            _arch = os.uname().machine
-+            cmake_args += [
-+                f"-DCMAKE_CUDA_COMPILER=nvcc",
-+                f"-DCMAKE_FIND_ROOT_PATH={os.environ.get('PREFIX', '')};{os.environ.get('BUILD_PREFIX', '')}/{_arch}-conda-linux-gnu/sysroot;{os.environ.get('PREFIX', '')}/targets/{_arch}-linux;{os.environ.get('BUILD_PREFIX', '')}/targets/{_arch}-linux",
-+            ]
++        if _USE_CUDA:
++            _prefix = os.environ.get('PREFIX', '')
++            _build_prefix = os.environ.get('BUILD_PREFIX', '')
++            _find_root = _prefix
++            if platform.system() == "Linux":
++                _arch = os.uname().machine
++                _find_root = f"{_prefix};{_build_prefix}/{_arch}-conda-linux-gnu/sysroot;{_prefix}/targets/{_arch}-linux;{_build_prefix}/targets/{_arch}-linux"
++                cmake_args += [f"-DCMAKE_CUDA_COMPILER=nvcc"]
++            cmake_args += [f"-DCMAKE_FIND_ROOT_PATH={_find_root}"]
 +
          build_args = ["--target", "install"]
          # Pass CUDA architecture to cmake
