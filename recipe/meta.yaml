@@ -1,5 +1,5 @@
 {% set name = "torchaudio" %}
-{% set version = "2.7.0" %}
+{% set version = "2.8.0" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
@@ -18,7 +18,7 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 31de856d3daa5c1db983eb5b964ed33d54be6e5038d6504181fe51e2d6cc6448
+  sha256: 8809e4b0fa1635a89d5b05fe8e6e1db79fc0cc2052474ef6e76e349755827c12
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
