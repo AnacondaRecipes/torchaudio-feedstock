@@ -1,5 +1,5 @@
 {% set name = "torchaudio" %}
-{% set version = "2.8.0" %}
+{% set version = "2.9.1" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
@@ -18,15 +18,14 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 8809e4b0fa1635a89d5b05fe8e6e1db79fc0cc2052474ef6e76e349755827c12
+  sha256: 590492c90552959b3df6f601eb733135064bf2d9e53c516adcf6845a4e545662
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
   number: {{ build }}
-  # py314 support in 2.9.0
-  skip: true                        # [py>313]
+  # py314 supported in 2.9.x
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
@@ -62,8 +61,7 @@ requirements:
     - pip
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - libtorch ={{ version }}.*=*{{ gpu_variant }}*
-    # pybind11 2.13 has py314 support
-    - pybind11 2.12
+    - pybind11 2.13.6
     - llvm-openmp                                 # [osx]
     - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
     - cuda-driver-dev                             # [linux and gpu_variant == "cuda"]
@@ -78,33 +76,22 @@ requirements:
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
 
-# ignoring sox tests because sox is disabled
-{% set ignore_modules =                  " --ignore=test/torchaudio_unittest/backend/dispatcher/sox --ignore=test/torchaudio_unittest/backend/sox_io" %}
-# these tests hang on osx-64, probably resource exhaustion
-{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets" %}  # [osx and x86_64]
-# and these are killed on win, probably same reason
+# v2.9.1 maintenance mode: backend and io modules removed upstream
+{% set ignore_modules = "" %}
+# these tests are killed on win, probably resource exhaustion
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/models" %}    # [win]
-# these tests import torchaudio.prototype which does not exist in main module
-{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/prototype --ignore=test/integration_tests/rnnt_pipeline_test.py" %}
 # test to skip because of missing flashlight-text
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/ctc_decoder_integration_test.py" %}
 # test to skip because of missing dependency deep-phonemizer
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/tacotron2_pipeline_test.py" %}
-# Tests to skip because of frame_offset not being accepted as argument of load() function. All load function implementation
-# seem to have a frame_offset parameter except for torchaudio/backend/_no_backend.py::load(), which should not be used since
-# ffmpeg is chosen as backend. More investigation would be necessary but this doesn't seem to be a problem with all other
-# occurrences of the load() function
-{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets/tedlium_test.py" %}
-# stream writer tests fail on windows because another process locks the writing on the output directory (common problem on win)
-{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/io/stream_writer_test.py" %}  # [win]
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/rnnt_pipeline_test.py" %}
+{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/wav2vec2_pipeline_test.py" %}
 
 # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
 {% set tests_to_skip = "kaldi or rnnt or test_unknown_subtype_warning" %}
 
 # skip due ARM w/ JIT kernal generation on aarch64 resulting in a failure on CI
 {% set tests_to_skip = tests_to_skip + " or test_lfilter_shape" %}  # [aarch64]
-
-{% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/wav2vec2_pipeline_test.py" %}
 
 {% set integration_tests_to_skip = "_not_a_real_test" %}
 # RNNT is disabled
@@ -116,8 +103,8 @@ test:
     - test/torchaudio_unittest
   {% else %}
     # choosing a subset of tests to prevent resource exhaustion and still run a reasonable amount of unit tests
+    # v2.9.1: backend and io directories removed upstream (maintenance mode)
     - test/torchaudio_unittest/assets
-    - test/torchaudio_unittest/backend
     - test/torchaudio_unittest/common_utils
     - test/torchaudio_unittest/compliance
     - test/torchaudio_unittest/datasets/__init__.py
@@ -128,7 +115,6 @@ test:
     - test/torchaudio_unittest/functional/functional_impl.py
     - test/torchaudio_unittest/functional/autograd_impl.py
     - test/torchaudio_unittest/functional/torchscript_consistency_impl.py
-    - test/torchaudio_unittest/io
     - test/torchaudio_unittest/transforms/__init__.py
     - test/torchaudio_unittest/transforms/torchscript_consistency_impl.py
     - test/torchaudio_unittest/transforms/transforms_test.py

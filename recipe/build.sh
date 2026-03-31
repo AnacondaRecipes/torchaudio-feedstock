@@ -18,7 +18,12 @@ fi
 
 # CUDA specific settings
 if [[ "${gpu_variant}" == "cuda" ]]; then
-    export TORCH_CUDA_ARCH_LIST="5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0+PTX"
+    if [[ ${cuda_compiler_version} == 12.[0-6] ]]; then
+        export TORCH_CUDA_ARCH_LIST="5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0+PTX"
+    else
+        # CUDA 12.8+/13.x: cap at 10.0+PTX (pytorch 2.9.1 doesn't support arch 10.1)
+        export TORCH_CUDA_ARCH_LIST="5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0+PTX"
+    fi
     export USE_CUDA=1
     export BUILD_CUDA_CTC_DECODER=1
 fi

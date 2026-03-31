@@ -5,17 +5,18 @@ Adds CMAKE_FIND_ROOT_PATH so CMake can find CUDA and torch libraries
 in the conda prefix. On Linux, also adds the conda sysroot paths.
 Uses os.uname().machine for architecture-aware paths on Linux.
 
+Upstream already handles CMAKE_CUDA_COMPILER and CUDA_TOOLKIT_ROOT_DIR
+natively (since v2.9.0), so CMAKE_CUDA_COMPILER=nvcc is only added
+on Linux where the upstream detection may not work with conda paths.
+
 ---
  tools/setup_helpers/extension.py | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-Index: audio/tools/setup_helpers/extension.py
-===================================================================
---- audio.orig/tools/setup_helpers/extension.py
-+++ audio/tools/setup_helpers/extension.py
-@@ -141,6 +141,16 @@
+--- a/tools/setup_helpers/extension.py
++++ b/tools/setup_helpers/extension.py
+@@ -111,6 +111,16 @@
              f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
-             f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
          ]
 +        if _USE_CUDA:
 +            _prefix = os.environ.get('PREFIX', '')
