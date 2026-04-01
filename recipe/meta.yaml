@@ -25,7 +25,8 @@ source:
 
 build:
   number: {{ build }}
-  # py314 supported in 2.9.x
+  # CUDA-only split PR — skip CPU builds (including osx dummy variant for Jinja2 rendering)
+  skip: true  # [gpu_variant == "cpu"]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
