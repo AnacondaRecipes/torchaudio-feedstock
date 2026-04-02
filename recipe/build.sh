@@ -19,7 +19,7 @@ fi
 # CUDA specific settings
 if [[ "${gpu_variant}" == "cuda" ]]; then
     # CUDA 13.x: dropped compute_50-61 (Maxwell/Pascal), min is 7.0 (Volta)
-    export TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0;10.0+PTX"
+    export TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0;10.0;10.3;12.0;12.1+PTX"
     export USE_CUDA=1
     export BUILD_CUDA_CTC_DECODER=1
 fi
