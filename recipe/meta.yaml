@@ -129,7 +129,6 @@ test:
     - test/torchaudio_unittest/__init__.py
   {% endif %}
     - test/smoke_test
-    - test/integration_tests
     - examples
   imports:
     - torchaudio
@@ -138,7 +137,8 @@ test:
   commands:
     - pip check
     - python test/smoke_test/smoke_test.py
-    - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests
+    # v2.9.1: all remaining integration tests download from internet, skip entirely
+    # - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests
   {% if run_all_unittests %}
     # to run the tests that require hubert, `dataset` is necessary (currently missing on main)
     - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
