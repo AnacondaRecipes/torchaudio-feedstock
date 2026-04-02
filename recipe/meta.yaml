@@ -61,6 +61,7 @@ requirements:
     - wheel
     - pip
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
+    - __cuda                                      # [gpu_variant == "cuda"]
     - libtorch ={{ version }}.*=*{{ gpu_variant }}*
     - pybind11 2.13.6
     - llvm-openmp                                 # [osx]
@@ -74,6 +75,7 @@ requirements:
   run:
     - python
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
+    - __cuda                                      # [gpu_variant == "cuda"]
 
 # v2.9.1 maintenance mode: backend and io modules removed upstream
 {% set ignore_modules = "" %}
