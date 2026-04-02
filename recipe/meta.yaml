@@ -91,6 +91,9 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/loudness_compliance_test.py" %}
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/source_separation_pipeline_test.py" %}
 {% set ignore_modules = ignore_modules + " --ignore=test/integration_tests/squim_pipeline_test.py" %}
+# tedlium tests require downloading dataset; wsj0mix tests require downloading data
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/datasets/tedlium_test.py" %}
+{% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/example" %}
 
 # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
 {% set tests_to_skip = "kaldi or rnnt or test_unknown_subtype_warning" %}
