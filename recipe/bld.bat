@@ -6,7 +6,8 @@ set USE_OPENMP=ON
 set BUILD_TORCHAUDIO_PYTHON_EXTENSION=ON
 
 :: Point the build system towards torch .lib files (needed for CUDA builds)
-set LIB=%PREFIX%\Lib\site-packages\torch\lib;%LIB%
+:: CUDA 13.x installs .lib files to Library\lib\x64 (changed from Library\lib in 12.x)
+set LIB=%PREFIX%\Lib\site-packages\torch\lib;%LIBRARY_LIB%;%LIBRARY_PREFIX%\lib\x64;%LIB%
 
 :: Point to build env's CUDA (nvcc is in build env, not host env)
 set CUDA_HOME=%BUILD_PREFIX%\Library
