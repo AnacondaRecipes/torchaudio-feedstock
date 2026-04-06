@@ -3,19 +3,16 @@ Subject: [PATCH] Add CMAKE_FIND_ROOT_PATH for conda CUDA builds
 
 Adds CMAKE_FIND_ROOT_PATH so CMake can find CUDA and torch libraries
 in the conda prefix. On Linux, also adds the conda sysroot paths.
-Uses os.uname().machine for architecture-aware paths on Linux.
+Uses sbsa-linux for aarch64 (NVIDIA SBSA convention).
 
 ---
  tools/setup_helpers/extension.py | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-Index: audio/tools/setup_helpers/extension.py
-===================================================================
---- audio.orig/tools/setup_helpers/extension.py
-+++ audio/tools/setup_helpers/extension.py
-@@ -141,6 +141,16 @@
+--- a/tools/setup_helpers/extension.py
++++ b/tools/setup_helpers/extension.py
+@@ -111,6 +111,16 @@
              f"-DUSE_OPENMP:BOOL={'ON' if _USE_OPENMP else 'OFF'}",
-             f"-DUSE_FFMPEG:BOOL={'ON' if _USE_FFMPEG else 'OFF'}",
          ]
 +        if _USE_CUDA:
 +            _prefix = os.environ.get('PREFIX', '')
@@ -23,8 +20,8 @@ Index: audio/tools/setup_helpers/extension.py
 +            _find_root = _prefix
 +            if platform.system() == "Linux":
 +                _arch = os.uname().machine
-+                _find_root = f"{_prefix};{_build_prefix}/{_arch}-conda-linux-gnu/sysroot;{_prefix}/targets/{_arch}-linux;{_build_prefix}/targets/{_arch}-linux"
-+                cmake_args += [f"-DCMAKE_CUDA_COMPILER=nvcc"]
++                _cuda_target = "sbsa-linux" if _arch == "aarch64" else f"{_arch}-linux"
++                _find_root = f"{_prefix};{_build_prefix}/{_arch}-conda-linux-gnu/sysroot;{_prefix}/targets/{_cuda_target};{_build_prefix}/targets/{_cuda_target}"
 +            cmake_args += [f"-DCMAKE_FIND_ROOT_PATH={_find_root}"]
 +
          build_args = ["--target", "install"]
