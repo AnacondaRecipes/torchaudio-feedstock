@@ -1,5 +1,5 @@
 {% set name = "torchaudio" %}
-{% set version = "2.9.1" %}
+{% set version = "2.10.0" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
@@ -18,14 +18,15 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 590492c90552959b3df6f601eb733135064bf2d9e53c516adcf6845a4e545662
+  sha256: d0d0d9575025eb85150356a0b0de75b553484838006af17a62470b52d59845d1
   patches:
     - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
   number: {{ build }}
-  # py314 supported in 2.9.x
+  # pytorch 2.10 has no py3.14 build on pkgs/main yet — skip until rebuilt
+  skip: true  # [py==314]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
