@@ -25,8 +25,8 @@ source:
 
 build:
   number: {{ build }}
-  # pytorch 2.10 has no py3.14 build on pkgs/main yet — skip until rebuilt
-  skip: true  # [py==314]
+  # py3.14 rebuild — only build py3.14 (py3.10–3.13 already shipped at build_number 0)
+  skip: true  # [py<314]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
