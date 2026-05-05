@@ -25,6 +25,9 @@ source:
 
 build:
   number: {{ build }}
+  # Temporary: py3.14-only rebuild — py3.10–3.13 already shipped at build_number 0.
+  # Remove this skip when rebuilding all Python versions (e.g. next version bump).
+  skip: true  # [py<314]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
