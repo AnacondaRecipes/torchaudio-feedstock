@@ -71,10 +71,12 @@ requirements:
     - cuda-profiler-api                           # [gpu_variant == "cuda"]
     - libcusolver-dev                             # [gpu_variant == "cuda"]
     - libcusparse-dev                             # [gpu_variant == "cuda"]
-    # cuda-cccl ships crt/host_defines.h which torchaudio's CPU .cpp files need
-    # (since -DUSE_CUDA is set globally in setup_helpers/extension.py, the CPU
-    # files include vector_types.h which transitively includes crt/host_defines.h).
-    - cuda-cccl_{{ target_platform }}             # [gpu_variant == "cuda" and win]
+    # cuda-crt-dev ships the crt/* headers (host_defines.h, host_config.h, etc.)
+    # that NVIDIA's vector_types.h includes via #include "crt/host_defines.h".
+    # cuda-cudart-dev surprisingly does NOT depend on cuda-crt-dev, so add explicitly.
+    # torchaudio hits this because setup_helpers/extension.py sets -DUSE_CUDA globally
+    # on CXX args, so CPU .cpp files transitively pull vector_types.h.
+    - cuda-crt-dev_{{ target_platform }}          # [gpu_variant == "cuda"]
   run:
     - python
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
