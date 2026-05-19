@@ -1,5 +1,5 @@
 {% set name = "torchaudio" %}
-{% set version = "2.10.0" %}
+{% set version = "2.11.0" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
@@ -18,17 +18,15 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: d0d0d9575025eb85150356a0b0de75b553484838006af17a62470b52d59845d1
+  sha256: 599ec24e7e1eef476ef21f0178e33da00e2434f930ba42e9cc20bf4002220486
   patches:
-    - patches/0001-add-cuda-cmake-vars.patch
+    # 0001 dropped: 2.11.0 build no longer uses CMake (CppExtension/CUDAExtension directly via tools/setup_helpers/extension.py)
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
   number: {{ build }}
   # CUDA-only split PR — skip CPU builds (including osx dummy variant for Jinja2 rendering)
   skip: true  # [gpu_variant == "cpu"]
-  # pytorch 2.10 has no py3.14 build on pkgs/main yet — skip until rebuilt
-  skip: true  # [py==314]
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   missing_dso_whitelist:
@@ -53,9 +51,8 @@ requirements:
     - {{ compiler('c') }}
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
     - libcublas-dev                               # [gpu_variant == "cuda"]
-    - cmake
+    # 2.11.0 build is via setuptools + ninja directly (no CMake); cmake/make removed
     - ninja
-    - make                                        # [not win]
     - patchelf                                    # [linux]
   host:
     - python
@@ -74,12 +71,18 @@ requirements:
     - cuda-profiler-api                           # [gpu_variant == "cuda"]
     - libcusolver-dev                             # [gpu_variant == "cuda"]
     - libcusparse-dev                             # [gpu_variant == "cuda"]
+    # cuda-crt-dev ships the crt/* headers (host_defines.h, host_config.h, etc.)
+    # that NVIDIA's vector_types.h includes via #include "crt/host_defines.h".
+    # cuda-cudart-dev surprisingly does NOT depend on cuda-crt-dev, so add explicitly.
+    # torchaudio hits this because setup_helpers/extension.py sets -DUSE_CUDA globally
+    # on CXX args, so CPU .cpp files transitively pull vector_types.h.
+    - cuda-crt-dev_{{ target_platform }}          # [gpu_variant == "cuda"]
   run:
     - python
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
 
-# v2.9.1 maintenance mode: backend and io modules removed upstream
+# Upstream has been in maintenance mode since 2.9.1: backend and io modules removed
 {% set ignore_modules = "" %}
 # these tests are killed on win, probably resource exhaustion
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/models" %}    # [win]
@@ -113,7 +116,7 @@ test:
     - test/torchaudio_unittest
   {% else %}
     # choosing a subset of tests to prevent resource exhaustion and still run a reasonable amount of unit tests
-    # v2.9.1: backend and io directories removed upstream (maintenance mode)
+    # backend and io directories were removed upstream in 2.9.1 (maintenance mode)
     - test/torchaudio_unittest/assets
     - test/torchaudio_unittest/common_utils
     - test/torchaudio_unittest/compliance
@@ -144,7 +147,7 @@ test:
   commands:
     - pip check
     - python test/smoke_test/smoke_test.py
-    # v2.9.1: all remaining integration tests download from internet, skip entirely
+    # All remaining integration tests download from the internet (since 2.9.1), skip entirely
     # - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests
   {% if run_all_unittests %}
     # to run the tests that require hubert, `dataset` is necessary (currently missing on main)
