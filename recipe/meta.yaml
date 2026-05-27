@@ -62,7 +62,12 @@ requirements:
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
     - libtorch ={{ version }}.*=*{{ gpu_variant }}*
-    - pybind11 2.13.6
+    # pybind11 itself is not needed: upstream uses torch.utils.cpp_extension
+    # which bundles pybind11 headers via the libtorch/pytorch deps above.
+    # pybind11-abi propagates the ABI-version pin (==11) via run_export so
+    # the resulting torchaudio artifact declares the correct ABI for
+    # cross-module C++ type exchange with pytorch.
+    - pybind11-abi
     - llvm-openmp                                 # [osx]
     - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
