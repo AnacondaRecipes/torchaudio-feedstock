@@ -4,7 +4,7 @@
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
 
-{% set build = 0 %}
+{% set build = 1 %}
 # Use a higher build number for the GPU variants, to ensure that they're
 # preferred by conda's solver, and they're preferentially
 # installed where the platform supports it.
@@ -62,7 +62,11 @@ requirements:
     - pytorch ={{ version }}.*=*{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
     - libtorch ={{ version }}.*=*{{ gpu_variant }}*
-    - pybind11 2.13.6
+    # pybind11 itself not needed: upstream uses torch.utils.cpp_extension
+    # which bundles pybind11 headers via libtorch/pytorch host deps above.
+    # pybind11-abi propagates the run_export pin (==11) for cross-module
+    # ABI safety with the corresponding pytorch build.
+    - pybind11-abi
     - llvm-openmp                                 # [osx]
     - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
     - cuda-cudart-dev                             # [gpu_variant == "cuda"]
