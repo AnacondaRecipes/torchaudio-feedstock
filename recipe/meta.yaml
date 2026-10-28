@@ -4,18 +4,18 @@
 # (see pytorch/audio#3902) and no 2.12 tag exists; bump build number only so the
 # 2.11 binaries link against the pytorch 2.12.0 libtorch ABI.
 # Build target -> host stays strict at 2.12.0 to control which libtorch we link.
-{% set compatible_pytorch = "2.12.0" %}
+{% set compatible_pytorch = "2.13.0" %}
 # Run lower bound -> per torchaudio 2.11's setup_helpers/extension.py:62
 # (TORCH_TARGET_VERSION=0x020a000000000000 = pytorch 2.10) + libtorch stable-ABI
 # guarantees, this binary is forward-compatible with any pytorch >= 2.12; allows
 # the same _1 / _101 build to serve future pytorch 2.13/2.14/... users without
 # another rebuild. (Charles Bousseau review, PR #33.)
-{% set compatible_pytorch_run = "2.12" %}
+{% set compatible_pytorch_run = "2.13" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
 
-{% set build = 1 %}
+{% set build = 2 %}
 # Use a higher build number for the GPU variants, to ensure that they're
 # preferred by conda's solver, and they're preferentially
 # installed where the platform supports it.
