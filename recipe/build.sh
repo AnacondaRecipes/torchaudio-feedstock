@@ -25,7 +25,7 @@ if [[ "${gpu_variant}" == "cuda" ]]; then
     export USE_CUDA=1
     export BUILD_CUDA_CTC_DECODER=1
     # CUDA 12.x requires gcc <14.0 per torch/utils/cpp_extension.py CUDA_GCC_VERSIONS,
-    # but pkgs/main only ships gcc 14.3.0 — same gcc that built pytorch 2.11. Bypass
+    # but pkgs/main only ships gcc 14.3.0 — same gcc that built pytorch 2.13. Bypass
     # the consumer-side check; the libstdc++ ABI is consistent.
     if [[ "${cuda_compiler_version:0:2}" == "12" ]]; then
         export TORCH_DONT_CHECK_COMPILER_ABI=1
