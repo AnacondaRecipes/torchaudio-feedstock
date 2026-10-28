@@ -1,9 +1,9 @@
 {% set name = "torchaudio" %}
 {% set version = "2.11.0" %}
-# Rebuild against pytorch 2.12.0: upstream torchaudio is in maintenance mode
-# (see pytorch/audio#3902) and no 2.12 tag exists; bump build number only so the
-# 2.11 binaries link against the pytorch 2.12.0 libtorch ABI.
-# Build target -> host stays strict at 2.12.0 to control which libtorch we link.
+# Rebuild against pytorch 2.13.0: upstream torchaudio is in maintenance mode
+# (see pytorch/audio#3902) and no 2.12/2.13 tag exists; bump build number only so the
+# 2.11 binaries link against the pytorch 2.13.0 libtorch ABI.
+# Build target -> host stays strict at 2.13.0 to control which libtorch we link.
 {% set compatible_pytorch = "2.13.0" %}
 # Run lower bound -> per torchaudio 2.11's setup_helpers/extension.py:62
 # (TORCH_TARGET_VERSION=0x020a000000000000 = pytorch 2.10) + libtorch stable-ABI
@@ -75,10 +75,10 @@ requirements:
     - libtorch ={{ compatible_pytorch }}.*=*{{ gpu_variant }}*
     # libtorch's torch/csrc/Exceptions.h does #include <pybind11/pybind11.h>;
     # the header is not vendored under libtorch's include tree, so pybind11
-    # must be on the host include path. Matches pytorch-feedstock 2.12 pin.
-    - pybind11 >=3.0.1,<4
+    # must be on the host include path. Matches pytorch-feedstock 2.13 pin.
+    - pybind11 >=3.0.4,<4
     # pybind11-abi propagates the run_export pin (==11) for cross-module
-    # ABI safety with the corresponding pytorch 2.12 build.
+    # ABI safety with the corresponding pytorch 2.13 build.
     - pybind11-abi ==11
     - llvm-openmp                                 # [osx]
     - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
