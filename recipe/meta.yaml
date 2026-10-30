@@ -63,7 +63,7 @@ requirements:
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
     - libcublas-dev                               # [gpu_variant == "cuda"]
     # 2.11.0 build is via setuptools + ninja directly (no CMake); cmake/make removed
-    - ninja
+    - ninja-base
     - patchelf                                    # [linux]
   host:
     - python
