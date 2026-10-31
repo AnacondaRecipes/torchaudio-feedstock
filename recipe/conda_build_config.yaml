@@ -7,15 +7,16 @@
 #
 # The two `cuda` rows are intentional, NOT a typo. They pair row-wise with
 # `cuda_compiler_version: [none, none, 12.9, 13.0]` via the zip_keys block:
-#   row 3 (selector: win or linux-x86_64) pairs with cuda_compiler_version 12.9
-#   row 4 (selector: win or linux)        pairs with cuda_compiler_version 13.0
+#   row 3 (selector: win-64 or linux-x86_64) pairs with cuda_compiler_version 12.9
+#   row 4 (selector: win-64 or linux)        pairs with cuda_compiler_version 13.0
 # linux-aarch64 only matches the second cuda line, so it builds cuda 13.0 only
-# (CUDA 12.x requires gcc <15 but aarch64 needs gcc 15.2.0).
+# (CUDA 12.x requires gcc <15 but aarch64 needs gcc 15.2.0). win-arm64 matches
+# neither: pytorch 2.15 has no cuda 12.9/13.0 builds there, so it is cpu only.
 gpu_variant:
   - cpu                              # all platforms
   - metal                            # [(osx and arm64)]
-  - cuda                             # [win or (linux and x86_64)]
-  - cuda                             # [win or linux]
+  - cuda                             # [(win and x86_64) or (linux and x86_64)]
+  - cuda                             # [(win and x86_64) or linux]
 
 # Linux aarch64 needs gcc 15.2.0 due to vector-instruction bug in 14.3.
 # Linux x86_64 pinned to gcc 14 for CUDA 12.x compatibility (matches
@@ -33,8 +34,8 @@ cxx_compiler_version:
 cuda_compiler_version:
   - none                             # cpu
   - none                             # [(osx and arm64)]  # metal pair
-  - 12.9                             # [win or (linux and x86_64)]
-  - 13.0                             # [win or linux]
+  - 12.9                             # [(win and x86_64) or (linux and x86_64)]
+  - 13.0                             # [(win and x86_64) or linux]
 
 # Both CPU and Metal build against SDK 13.3 (torchvision Metal does not need
 # the newer SDK 14.5 that pytorch uses for its Metal backend). Kept here so

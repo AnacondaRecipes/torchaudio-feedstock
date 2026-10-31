@@ -1,21 +1,20 @@
 {% set name = "torchaudio" %}
-{% set version = "2.11.0" %}
-# Rebuild against pytorch 2.13.0: upstream torchaudio is in maintenance mode
-# (see pytorch/audio#3902) and no 2.12/2.13 tag exists; bump build number only so the
-# 2.11 binaries link against the pytorch 2.13.0 libtorch ABI.
-# Build target -> host stays strict at 2.13.0 to control which libtorch we link.
-{% set compatible_pytorch = "2.13.0" %}
-# Run lower bound -> per torchaudio 2.11's setup_helpers/extension.py:62
+{% set version = "2.11.1" %}
+# Built against pytorch 2.15.0. Upstream torchaudio is in maintenance mode
+# (see pytorch/audio#3902); 2.11.1 is its release for the torch 2.15 cycle.
+# Build target -> host stays strict at 2.15.0 to control which libtorch we link.
+{% set compatible_pytorch = "2.15.0" %}
+# Run lower bound -> per torchaudio 2.11.1's setup_helpers/extension.py:71
 # (TORCH_TARGET_VERSION=0x020a000000000000 = pytorch 2.10) the extension targets the
 # libtorch stable ABI, so the lower bound is just the pytorch we build against. The
-# effective upper bound is still <2.14: pytorch/libtorch run_exports (max_pin x.x)
-# are added to run, so each pytorch minor needs its own rebuild (_1/_101 -> 2.12).
-{% set compatible_pytorch_run = "2.13" %}
+# effective upper bound is still <2.16: pytorch/libtorch run_exports (max_pin x.x)
+# are added to run, so each pytorch minor needs its own rebuild.
+{% set compatible_pytorch_run = "2.15" %}
 {% set run_all_unittests = False %}
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
 
-{% set build = 2 %}
+{% set build = 0 %}
 # Use a higher build number for the GPU variants, to ensure that they're
 # preferred by conda's solver, and they're preferentially
 # installed where the platform supports it.
@@ -29,9 +28,8 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 599ec24e7e1eef476ef21f0178e33da00e2434f930ba42e9cc20bf4002220486
+  sha256: 594db84c91cb795a13853d1ee457d0f874dd95838b6f029eaaf518fb3838cdf5
   patches:
-    # 0001 dropped: 2.11.0 build no longer uses CMake (CppExtension/CUDAExtension directly via tools/setup_helpers/extension.py)
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
@@ -39,7 +37,8 @@ build:
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
   # CUDA 13.0 split PR — skip everything but cuda 13.0 (per unified-recipe design: identical across cpu/cuda129/cuda130 PRs except this line)
-  skip: true  # [gpu_variant != "cuda" or cuda_compiler_version != "13.0"]
+  # py3.10: pytorch 2.15 requires python >=3.11 (no py310 builds on pkgs/main)
+  skip: true  # [gpu_variant != "cuda" or cuda_compiler_version != "13.0" or py<311]
   missing_dso_whitelist:
     - "**/libc10.so"                # [linux]
     - "**/libtorch_cpu.so"          # [linux]
@@ -63,11 +62,12 @@ requirements:
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
     - libcublas-dev                               # [gpu_variant == "cuda"]
     # 2.11.0 build is via setuptools + ninja directly (no CMake); cmake/make removed
-    - ninja
+    - ninja-base
     - patchelf                                    # [linux]
   host:
     - python
-    - setuptools
+    # tools/setup_helpers/extension.py imports setuptools.command.bdist_wheel (setuptools >=70.1)
+    - setuptools >=70.1
     - wheel
     - pip
     - pytorch ={{ compatible_pytorch }}.*=*{{ gpu_variant }}*
@@ -75,10 +75,10 @@ requirements:
     - libtorch ={{ compatible_pytorch }}.*=*{{ gpu_variant }}*
     # libtorch's torch/csrc/Exceptions.h does #include <pybind11/pybind11.h>;
     # the header is not vendored under libtorch's include tree, so pybind11
-    # must be on the host include path. Matches pytorch-feedstock 2.13 pin.
+    # must be on the host include path. Matches pytorch-feedstock 2.15 pin.
     - pybind11 >=3.0.4,<4
     # pybind11-abi propagates the run_export pin (==11) for cross-module
-    # ABI safety with the corresponding pytorch 2.13 build.
+    # ABI safety with the corresponding pytorch 2.15 build.
     - pybind11-abi ==11
     - llvm-openmp                                 # [osx]
     - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
@@ -180,14 +180,15 @@ test:
     - parameterized
     - scipy
     - numpy
-    - scikit-learn
+    # no py3.15 build on pkgs/main yet; only examples/hubert uses it (run_all_unittests)
+    - scikit-learn  # [py<315]
     - pillow
     - expecttest
     - pysoundfile
 
 
 about:
-  home: https://pytorch.org/audio/stable/index.html
+  home: https://docs.pytorch.org/audio/stable/index.html
   summary: Torchaudio is a library for audio and signal processing with PyTorch.
   description: |
     The aim of torchaudio is to apply PyTorch to the audio domain. By supporting PyTorch, torchaudio follows the same
@@ -196,10 +197,17 @@ about:
     library and not a general signal processing library. The benefits of PyTorch can be seen in torchaudio through
     having all the computations be through PyTorch operations which makes it easy to use and feel like a natural
     extension.
-  license: BSD-2-Clause
-  license_file: LICENSE
-  license_family: BSD
-  doc_url: https://pytorch.org/audio/main/torchaudio.html
+  # cuda builds also compile the bundled NVIDIA cuctc decoder (BSD-2, cutlass-derived BSD-3, bitonic_topk Apache-2.0)
+  license: BSD-2-Clause                                  # [gpu_variant != "cuda"]
+  license: BSD-2-Clause AND BSD-3-Clause AND Apache-2.0  # [gpu_variant == "cuda"]
+  license_file:
+    - LICENSE
+    - third_party/LICENSES_BUNDLED.txt                   # [gpu_variant == "cuda"]
+    - src/libtorchaudio/cuctc/LICENSE                    # [gpu_variant == "cuda"]
+    - src/libtorchaudio/cuctc/src/bitonic_topk/LICENSE   # [gpu_variant == "cuda"]
+  license_family: BSD                                    # [gpu_variant != "cuda"]
+  license_family: Other                                  # [gpu_variant == "cuda"]
+  doc_url: https://docs.pytorch.org/audio/main/torchaudio.html
   dev_url: https://github.com/pytorch/audio
 
 extra:
