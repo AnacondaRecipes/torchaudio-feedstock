@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# 2.11.0 build flags (consumed by tools/setup_helpers/extension.py):
+# Build flags since 2.11.0 (consumed by tools/setup_helpers/extension.py):
 # BUILD_RNNT, BUILD_ALIGN, USE_OPENMP, USE_CUDA, BUILD_CUDA_CTC_DECODER, BUILD_CPP_TEST.
-# USE_FFMPEG/BUILD_SOX/BUILD_TORCHAUDIO_PYTHON_EXTENSION dropped: 2.11.0 no longer uses CMake.
-export BUILD_RNNT=0
+# BUILD_RNNT is left at upstream's default (on), matching bld.bat.
 
 # Platform-specific OpenMP settings
 if [[ "${target_platform}" == osx* ]]; then

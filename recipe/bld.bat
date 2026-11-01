@@ -1,8 +1,8 @@
 @echo off
 
-REM 2.11.0 build flags (consumed by tools/setup_helpers/extension.py):
+REM Build flags since 2.11.0 (consumed by tools/setup_helpers/extension.py):
 REM BUILD_RNNT, BUILD_ALIGN, USE_OPENMP, USE_CUDA, BUILD_CUDA_CTC_DECODER, BUILD_CPP_TEST.
-REM USE_FFMPEG/BUILD_SOX/BUILD_TORCHAUDIO_PYTHON_EXTENSION dropped: 2.11.0 no longer uses CMake.
+REM BUILD_RNNT is left at upstream's default (on), matching build.sh.
 set USE_OPENMP=ON
 
 :: Point the build system towards torch .lib files (needed for CUDA builds)
