@@ -36,9 +36,9 @@ build:
   number: {{ build }}
   string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
   string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
-  # main-cpu / main-cuda129 / main-cuda130 share this recipe; only the skip line below differs
+  # metal: torchaudio has no MPS backend, so osx-arm64 ships the cpu build only
   # py3.10: pytorch 2.15 requires python >=3.11 (no py310 builds on pkgs/main)
-  skip: true  # [gpu_variant != "cpu" or py<311]
+  skip: true  # [gpu_variant == "metal" or py<311]
   missing_dso_whitelist:
     - "**/libc10.so"                # [linux]
     - "**/libtorch_cpu.so"          # [linux]
