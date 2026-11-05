@@ -137,8 +137,9 @@ test:
     # CUDA CTC decoder: _load_lib returns False instead of raising when the DSO is missing,
     # and torch.ops namespaces are lazy, so assert the load and resolve the registered ops
     - python -c "import torch, torchaudio._extension as e; assert e._load_lib('torchaudio_prefixctc'); torch.ops.torchaudio_prefixctc.prefixCTC_alloc; torch.ops.torchaudio_prefixctc.ctc_beam_search_decoder_batch_gpu_v2"  # [gpu_variant == "cuda"]
-    # launch a torchaudio CUDA kernel (lfilter's CUDA impl) and compare it with the CPU result
-    - python -c "import torch, torchaudio.functional as F; x = torch.rand(2, 512, device='cuda') * 2 - 1; a = torch.tensor([1.0, -0.9], device='cuda'); b = torch.tensor([0.5, 0.5], device='cuda'); assert torch.allclose(F.lfilter(x, a, b).cpu(), F.lfilter(x.cpu(), a.cpu(), b.cpu()), atol=1e-4)"  # [gpu_variant == "cuda"]
+    # launch a torchaudio CUDA kernel (lfilter's CUDA impl) and compare it with the CPU result; only when
+    # pytorch itself has kernels for the worker's GPU (the aarch64 test workers' T4G sm_75 is not in pytorch's list)
+    - python -c "import torch, torchaudio.functional as F; c = torch.cuda.get_device_capability(); cap = f'sm_{c[0]}{c[1]}'; run = cap in torch.cuda.get_arch_list(); print('lfilter CUDA test on', cap, 'runs' if run else 'skipped: pytorch has no kernels for this GPU'); x = torch.rand(2, 512) * 2 - 1; a = torch.tensor([1.0, -0.9]); b = torch.tensor([0.5, 0.5]); assert not run or torch.allclose(F.lfilter(x.cuda(), a.cuda(), b.cuda()).cpu(), F.lfilter(x, a, b), atol=1e-4)"  # [gpu_variant == "cuda"]
     # All remaining integration tests download from the internet (since 2.9.1), skip entirely
     # - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests
     # skipping on osx-64 because of resource exhaustion

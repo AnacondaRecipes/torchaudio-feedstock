@@ -13,9 +13,15 @@ REM Point to build env's CUDA (nvcc is in build env, not host env)
 set "CUDA_HOME=%BUILD_PREFIX%\Library"
 set "CUDA_PATH=%BUILD_PREFIX%\Library"
 
-REM Same CUDA arch list as pytorch-feedstock's win-64 build for CUDA 12.9 and 13.0.
-REM CUDA 12.9.0's clusterlaunchcontrol.h breaks sm_100/sm_120 on MSVC; pkgs/main's
-REM cuda-nvcc 12.9.86 is CUDA 12.9.1, which has the fix.
-set "TORCH_CUDA_ARCH_LIST=7.5;8.0;8.6;9.0;10.0;12.0+PTX"
+REM CUDA 13.x: same arch list as pytorch-feedstock's win-64 build.
+REM CUDA 12.9 (incl. nvcc 12.9.86 on pkgs/main): CCCL's cuda/__ptx clusterlaunchcontrol.h
+REM fails under MSVC for sm_100/sm_120 (asm operand size 4 vs constraint 'l'; hit by
+REM forced_align/gpu/compute.cu), so stop at sm_90 and ship compute_90 PTX, which the
+REM driver JIT-compiles on Blackwell and newer GPUs.
+if "%cuda_compiler_version:~0,2%" == "12" (
+  set "TORCH_CUDA_ARCH_LIST=7.5;8.0;8.6;9.0+PTX"
+) else (
+  set "TORCH_CUDA_ARCH_LIST=7.5;8.0;8.6;9.0;10.0;12.0+PTX"
+)
 
 %PYTHON% -m pip install . -vv --no-deps --no-build-isolation
