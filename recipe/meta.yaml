@@ -10,17 +10,11 @@
 # effective upper bound is still <2.16: pytorch/libtorch run_exports (max_pin x.x)
 # are added to run, so each pytorch minor needs its own rebuild.
 {% set compatible_pytorch_run = "2.15" %}
-{% set run_all_unittests = False %}
+# cuda builds also compile the bundled NVIDIA cuctc decoder (see about: below)
+{% set license = "BSD-2-Clause" %}
+{% set license = "BSD-2-Clause AND BSD-3-Clause AND Apache-2.0" %}  # [gpu_variant == "cuda"]
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
-
-{% set build = 0 %}
-# Use a higher build number for the GPU variants, to ensure that they're
-# preferred by conda's solver, and they're preferentially
-# installed where the platform supports it.
-{% if gpu_variant != "cpu" %}
-{% set build = build + 100 %}
-{% endif %}
 
 package:
   name: {{ name|lower }}
@@ -33,24 +27,11 @@ source:
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
-  number: {{ build }}
-  string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
-  string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
-  # metal: torchaudio has no MPS backend, so osx-arm64 ships the cpu build only
-  # py3.10: pytorch 2.15 requires python >=3.11 (no py310 builds on pkgs/main)
-  skip: true  # [gpu_variant == "metal" or py<311]
-  missing_dso_whitelist:
-    - "**/libc10.so"                # [linux]
-    - "**/libtorch_cpu.so"          # [linux]
-    - "**/libtorch_python.so"       # [linux]
-    - "**/libtorchaudio.so"         # [linux or osx]
-    - "**/libc10.dylib"             # [osx]
-    - "**/libtorch_cpu.dylib"       # [osx]
-    - "**/libtorch_python.dylib"    # [osx]
-    - "**/torch_cpu.dll"            # [win]
-    - "**/c10.dll"                  # [win]
-    - "**/torch_python.dll"         # [win]
-    - "**/libtorchaudio.pyd"        # [win]
+  # higher build number for the cuda variants so the solver prefers them where the platform supports it
+  number: {{ 100 if gpu_variant == "cuda" else 0 }}
+  string: {{ "cpu_" if gpu_variant == "cpu" else "cuda" ~ cuda_compiler_version | replace(".", "") }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+  # pytorch 2.15 requires python >=3.11 (no py310 builds on pkgs/main)
+  skip: true  # [py<311]
   # these -dev packages only supply headers; no torchaudio DSO links their libraries
   ignore_run_exports_from:                        # [gpu_variant == "cuda"]
     - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
@@ -74,22 +55,21 @@ requirements:
     - wheel
     - pip
     - pytorch ={{ compatible_pytorch }}.*=*{{ gpu_variant }}*
-    - __cuda                                      # [gpu_variant == "cuda"]
+    - __cuda                                      # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # virtual package, no version
     - libtorch ={{ compatible_pytorch }}.*=*{{ gpu_variant }}*
-    - llvm-openmp                                 # [osx]
     - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
-    - cuda-cudart-dev                             # [gpu_variant == "cuda"]
-    - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
-    - cuda-nvml-dev                               # [gpu_variant == "cuda"]
-    - cuda-profiler-api                           # [gpu_variant == "cuda"]
-    - libcusolver-dev                             # [gpu_variant == "cuda"]
-    - libcusparse-dev                             # [gpu_variant == "cuda"]
+    - cuda-cudart-dev                             # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - cuda-nvtx-dev                               # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - cuda-nvml-dev                               # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - cuda-profiler-api                           # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - libcusolver-dev                             # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - libcusparse-dev                             # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
     # cuda-crt-dev ships the crt/* headers (host_defines.h, host_config.h, etc.)
     # that NVIDIA's vector_types.h includes via #include "crt/host_defines.h".
     # cuda-cudart-dev surprisingly does NOT depend on cuda-crt-dev, so add explicitly.
     # torchaudio hits this because setup_helpers/extension.py sets -DUSE_CUDA globally
     # on CXX args, so CPU .cpp files transitively pull vector_types.h.
-    - cuda-crt-dev_{{ target_platform }}          # [gpu_variant == "cuda"]
+    - cuda-crt-dev_{{ target_platform }}          # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
   run:
     - python
     - pytorch >={{ compatible_pytorch_run }} *{{ gpu_variant }}*
@@ -123,9 +103,6 @@ requirements:
 
 test:
   source_files:
-  {% if run_all_unittests %}
-    - test/torchaudio_unittest
-  {% else %}
     # choosing a subset of tests to prevent resource exhaustion and still run a reasonable amount of unit tests
     # backend and io directories were removed upstream in 2.9.1 (maintenance mode)
     - test/torchaudio_unittest/assets
@@ -148,7 +125,6 @@ test:
     - test/torchaudio_unittest/transforms/autograd_cpu_test.py
     - test/torchaudio_unittest/utils
     - test/torchaudio_unittest/__init__.py
-  {% endif %}
     - test/smoke_test
     - examples
   imports:
@@ -161,13 +137,10 @@ test:
     # CUDA CTC decoder: _load_lib returns False instead of raising when the DSO is missing,
     # and torch.ops namespaces are lazy, so assert the load and resolve the registered ops
     - python -c "import torch, torchaudio._extension as e; assert e._load_lib('torchaudio_prefixctc'); torch.ops.torchaudio_prefixctc.prefixCTC_alloc; torch.ops.torchaudio_prefixctc.ctc_beam_search_decoder_batch_gpu_v2"  # [gpu_variant == "cuda"]
+    # launch a torchaudio CUDA kernel (lfilter's CUDA impl) and compare it with the CPU result
+    - python -c "import torch, torchaudio.functional as F; x = torch.rand(2, 512, device='cuda') * 2 - 1; a = torch.tensor([1.0, -0.9], device='cuda'); b = torch.tensor([0.5, 0.5], device='cuda'); assert torch.allclose(F.lfilter(x, a, b).cpu(), F.lfilter(x.cpu(), a.cpu(), b.cpu()), atol=1e-4)"  # [gpu_variant == "cuda"]
     # All remaining integration tests download from the internet (since 2.9.1), skip entirely
     # - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests
-  {% if run_all_unittests %}
-    # to run the tests that require hubert, `dataset` is necessary (currently missing on main)
-    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
-    - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
-  {% endif %}
     # skipping on osx-64 because of resource exhaustion
     - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest   # [not (osx and x86_64)]
   requires:
@@ -177,8 +150,6 @@ test:
     - parameterized
     - scipy
     - numpy
-    # no py3.15 build on pkgs/main yet; only examples/hubert uses it (run_all_unittests)
-    - scikit-learn  # [py<315]
     - pillow
     - expecttest
     - pysoundfile
@@ -196,16 +167,14 @@ about:
     extension.
   # cuda builds also compile the bundled NVIDIA cuctc decoder (BSD-2, cutlass-derived BSD-3, bitonic_topk Apache-2.0)
   # BSD-3 text: ctc_prefix_decoder_kernel_v2.cu's NVIDIA header (the cutlass-derived ctc_fast_divmod.cuh ships no notice)
-  license: BSD-2-Clause                                  # [gpu_variant != "cuda"]
-  license: BSD-2-Clause AND BSD-3-Clause AND Apache-2.0  # [gpu_variant == "cuda"]
+  license: {{ license }}
   license_file:
     - LICENSE
     - third_party/LICENSES_BUNDLED.txt                   # [gpu_variant == "cuda"]
     - src/libtorchaudio/cuctc/LICENSE                    # [gpu_variant == "cuda"]
     - src/libtorchaudio/cuctc/src/bitonic_topk/LICENSE   # [gpu_variant == "cuda"]
     - src/libtorchaudio/cuctc/src/ctc_prefix_decoder_kernel_v2.cu  # [gpu_variant == "cuda"]
-  license_family: BSD                                    # [gpu_variant != "cuda"]
-  license_family: Other                                  # [gpu_variant == "cuda"]
+  license_family: {{ "Other" if gpu_variant == "cuda" else "BSD" }}
   doc_url: https://docs.pytorch.org/audio/main/torchaudio.html
   dev_url: https://github.com/pytorch/audio
 

@@ -1,15 +1,9 @@
 #!/bin/bash
 
 # Build flags since 2.11.0 (consumed by tools/setup_helpers/extension.py):
-# BUILD_RNNT, BUILD_ALIGN, USE_OPENMP, USE_CUDA, BUILD_CUDA_CTC_DECODER, BUILD_CPP_TEST.
-# BUILD_RNNT is left at upstream's default (on), matching bld.bat.
-
-# Platform-specific OpenMP settings
-if [[ "${target_platform}" == osx* ]]; then
-    export USE_OPENMP=ON
-else
-    export USE_OPENMP=OFF
-fi
+# BUILD_RNNT, BUILD_ALIGN, USE_CUDA, BUILD_CUDA_CTC_DECODER, BUILD_CPP_TEST.
+# BUILD_RNNT is left at upstream's default (on), matching bld.bat. USE_OPENMP is
+# read but has no effect since 2.11.0 (no OpenMP flags or pragmas), so it is not set.
 
 # CUDA specific settings
 if [[ "${gpu_variant}" == "cuda" ]]; then
@@ -23,12 +17,6 @@ if [[ "${gpu_variant}" == "cuda" ]]; then
     fi
     export USE_CUDA=1
     export BUILD_CUDA_CTC_DECODER=1
-    # CUDA 12.x requires gcc <14.0 per torch/utils/cpp_extension.py CUDA_GCC_VERSIONS,
-    # but pkgs/main only ships gcc 14.3.0 — same gcc that built pytorch 2.15. Bypass
-    # the consumer-side check; the libstdc++ ABI is consistent.
-    if [[ "${cuda_compiler_version:0:2}" == "12" ]]; then
-        export TORCH_DONT_CHECK_COMPILER_ABI=1
-    fi
 fi
 
 # Install package
