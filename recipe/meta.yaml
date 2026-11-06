@@ -1,16 +1,20 @@
 {% set name = "torchaudio" %}
-{% set version = "2.10.0" %}
-{% set run_all_unittests = False %}
+{% set version = "2.11.1" %}
+# Built against pytorch 2.15.0. Upstream torchaudio is in maintenance mode
+# (see pytorch/audio#3902); 2.11.1 is its release for the torch 2.15 cycle.
+# Build target -> host stays strict at 2.15.0 to control which libtorch we link.
+{% set compatible_pytorch = "2.15.0" %}
+# Run lower bound -> per torchaudio 2.11.1's setup_helpers/extension.py:71
+# (TORCH_TARGET_VERSION=0x020a000000000000 = pytorch 2.10) the extension targets the
+# libtorch stable ABI, so the lower bound is just the pytorch we build against. The
+# effective upper bound is still <2.16: pytorch/libtorch run_exports (max_pin x.x)
+# are added to run, so each pytorch minor needs its own rebuild.
+{% set compatible_pytorch_run = "2.15" %}
+# cuda builds also compile the bundled NVIDIA cuctc decoder (see about: below)
+{% set license = "BSD-2-Clause" %}
+{% set license = "BSD-2-Clause AND BSD-3-Clause AND Apache-2.0" %}  # [gpu_variant == "cuda"]
 # Torchaudio and PyTorch are tightly coupled in terms of versions.
 # check the [releases page](https://github.com/pytorch/audio/releases) for compatibility.
-
-{% set build = 0 %}
-# Use a higher build number for the GPU variants, to ensure that they're
-# preferred by conda's solver, and they're preferentially
-# installed where the platform supports it.
-{% if gpu_variant != "cpu" %}
-{% set build = build + 100 %}
-{% endif %}
 
 package:
   name: {{ name|lower }}
@@ -18,32 +22,21 @@ package:
 
 source:
   url: https://github.com/pytorch/audio/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: d0d0d9575025eb85150356a0b0de75b553484838006af17a62470b52d59845d1
+  sha256: 594db84c91cb795a13853d1ee457d0f874dd95838b6f029eaaf518fb3838cdf5
   patches:
-    - patches/0001-add-cuda-cmake-vars.patch
     - patches/0002-replace-FLT_MAX-for-compatibility-with-newer-cudatoo.patch
 
 build:
-  number: {{ build }}
-  # Temporary: py3.14-only rebuild — py3.10–3.13 already shipped at build_number 0.
-  # Remove this skip when rebuilding all Python versions (e.g. next version bump).
-  skip: true  # [py<314]
-  string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [gpu_variant == "cpu"]
-  string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [gpu_variant == "cuda"]
-  missing_dso_whitelist:
-    - "**/libc10.so"                # [linux]
-    - "**/libtorch_cpu.so"          # [linux]
-    - "**/libtorch_python.so"       # [linux]
-    - "**/libtorchaudio.so"         # [linux or osx]
-    - "**/libc10.dylib"             # [osx]
-    - "**/libtorch_cpu.dylib"       # [osx]
-    - "**/libtorch_python.dylib"    # [osx]
-    - "**/torch_cpu.dll"            # [win]
-    - "**/c10.dll"                  # [win]
-    - "**/torch_python.dll"         # [win]
-    - "**/libtorchaudio.pyd"        # [win]
-    - "**/libctc_prefix_decoder.so"  # [gpu_variant == "cuda"]
-    - "**/libctc_prefix_decoder.pyd" # [gpu_variant == "cuda"]
+  # higher build number for the cuda variants so the solver prefers them where the platform supports it
+  number: {{ 100 if gpu_variant == "cuda" else 0 }}
+  string: {{ "cpu_" if gpu_variant == "cpu" else "cuda" ~ cuda_compiler_version | replace(".", "") }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+  # pytorch 2.15 requires python >=3.11 (no py310 builds on pkgs/main)
+  skip: true  # [py<311]
+  # these -dev packages only supply headers; no torchaudio DSO links their libraries
+  ignore_run_exports_from:                        # [gpu_variant == "cuda"]
+    - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
+    - libcusolver-dev                             # [gpu_variant == "cuda"]
+    - libcusparse-dev                             # [gpu_variant == "cuda"]
 
 requirements:
   build:
@@ -52,33 +45,37 @@ requirements:
     - {{ compiler('c') }}
     - {{ compiler('cuda') }}                      # [gpu_variant == "cuda"]
     - libcublas-dev                               # [gpu_variant == "cuda"]
-    - cmake
-    - ninja
-    - make                                        # [not win]
+    # since 2.11.0 the build is via setuptools + ninja directly (no CMake)
+    - ninja-base
     - patchelf                                    # [linux]
   host:
     - python
-    - setuptools
+    # tools/setup_helpers/extension.py imports setuptools.command.bdist_wheel (setuptools >=70.1)
+    - setuptools >=70.1
     - wheel
     - pip
-    - pytorch ={{ version }}.*=*{{ gpu_variant }}*
-    - __cuda                                      # [gpu_variant == "cuda"]
-    - libtorch ={{ version }}.*=*{{ gpu_variant }}*
-    - pybind11 2.13.6
-    - llvm-openmp                                 # [osx]
+    - pytorch ={{ compatible_pytorch }}.*=*{{ gpu_variant }}*
+    - __cuda                                      # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # virtual package, no version
+    - libtorch ={{ compatible_pytorch }}.*=*{{ gpu_variant }}*
     - cuda-version {{ cuda_compiler_version }}    # [gpu_variant == "cuda"]
-    - cuda-cudart-dev                             # [gpu_variant == "cuda"]
-    - cuda-nvtx-dev                               # [gpu_variant == "cuda"]
-    - cuda-nvml-dev                               # [gpu_variant == "cuda"]
-    - cuda-profiler-api                           # [gpu_variant == "cuda"]
-    - libcusolver-dev                             # [gpu_variant == "cuda"]
-    - libcusparse-dev                             # [gpu_variant == "cuda"]
+    - cuda-cudart-dev                             # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - cuda-nvtx-dev                               # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - cuda-nvml-dev                               # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - cuda-profiler-api                           # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - libcusolver-dev                             # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    - libcusparse-dev                             # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
+    # cuda-crt-dev ships the crt/* headers (host_defines.h, host_config.h, etc.)
+    # that NVIDIA's vector_types.h includes via #include "crt/host_defines.h".
+    # cuda-cudart-dev surprisingly does NOT depend on cuda-crt-dev, so add explicitly.
+    # torchaudio hits this because setup_helpers/extension.py sets -DUSE_CUDA globally
+    # on CXX args, so CPU .cpp files transitively pull vector_types.h.
+    - cuda-crt-dev_{{ target_platform }}          # [gpu_variant == "cuda"] analint: host_section_needs_exact_pinnings  # floats with cuda-version
   run:
     - python
-    - pytorch ={{ version }}.*=*{{ gpu_variant }}*
+    - pytorch >={{ compatible_pytorch_run }} *{{ gpu_variant }}*
     - __cuda                                      # [gpu_variant == "cuda"]
 
-# v2.9.1 maintenance mode: backend and io modules removed upstream
+# Upstream has been in maintenance mode since 2.9.1: backend and io modules removed
 {% set ignore_modules = "" %}
 # these tests are killed on win, probably resource exhaustion
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/models" %}    # [win]
@@ -97,22 +94,17 @@ requirements:
 {% set ignore_modules = ignore_modules + " --ignore=test/torchaudio_unittest/example" %}
 
 # We don't provide kaldi-io in our distro, so skip tests that test functionality that requires it
-{% set tests_to_skip = "kaldi or rnnt or test_unknown_subtype_warning" %}
+{% set tests_to_skip = "kaldi or test_unknown_subtype_warning" %}
 
 # skip due ARM w/ JIT kernal generation on aarch64 resulting in a failure on CI
 {% set tests_to_skip = tests_to_skip + " or test_lfilter_shape" %}  # [aarch64]
 
 {% set integration_tests_to_skip = "_not_a_real_test" %}
-# RNNT is disabled
-{% set integration_tests_to_skip = integration_tests_to_skip + " or rnnt" %}
 
 test:
   source_files:
-  {% if run_all_unittests %}
-    - test/torchaudio_unittest
-  {% else %}
     # choosing a subset of tests to prevent resource exhaustion and still run a reasonable amount of unit tests
-    # v2.9.1: backend and io directories removed upstream (maintenance mode)
+    # backend and io directories were removed upstream in 2.9.1 (maintenance mode)
     - test/torchaudio_unittest/assets
     - test/torchaudio_unittest/common_utils
     - test/torchaudio_unittest/compliance
@@ -133,7 +125,6 @@ test:
     - test/torchaudio_unittest/transforms/autograd_cpu_test.py
     - test/torchaudio_unittest/utils
     - test/torchaudio_unittest/__init__.py
-  {% endif %}
     - test/smoke_test
     - examples
   imports:
@@ -143,13 +134,14 @@ test:
   commands:
     - pip check
     - python test/smoke_test/smoke_test.py
-    # v2.9.1: all remaining integration tests download from internet, skip entirely
+    # CUDA CTC decoder: _load_lib returns False instead of raising when the DSO is missing,
+    # and torch.ops namespaces are lazy, so assert the load and resolve the registered ops
+    - python -c "import torch, torchaudio._extension as e; assert e._load_lib('torchaudio_prefixctc'); torch.ops.torchaudio_prefixctc.prefixCTC_alloc; torch.ops.torchaudio_prefixctc.ctc_beam_search_decoder_batch_gpu_v2"  # [gpu_variant == "cuda"]
+    # launch a torchaudio CUDA kernel (lfilter's CUDA impl) and compare it with the CPU result; only when
+    # pytorch itself has kernels for the worker's GPU (the aarch64 test workers' T4G sm_75 is not in pytorch's list)
+    - python -c "import torch, torchaudio.functional as F; c = torch.cuda.get_device_capability(); cap = f'sm_{c[0]}{c[1]}'; run = cap in torch.cuda.get_arch_list(); print('lfilter CUDA test on', cap, 'runs' if run else 'skipped, pytorch has no kernels for this GPU'); x = torch.rand(2, 512) * 2 - 1; a = torch.tensor([1.0, -0.9]); b = torch.tensor([0.5, 0.5]); assert not run or torch.allclose(F.lfilter(x.cuda(), a.cuda(), b.cuda()).cpu(), F.lfilter(x, a, b), atol=1e-4)"  # [gpu_variant == "cuda"]
+    # All remaining integration tests download from the internet (since 2.9.1), skip entirely
     # - pytest -v {{ ignore_modules }} -k "not ({{ integration_tests_to_skip }})" test/integration_tests
-  {% if run_all_unittests %}
-    # to run the tests that require hubert, `dataset` is necessary (currently missing on main)
-    - export PYTHONPATH=$PWD/examples/hubert:$PYTHONPATH  # [not win]
-    - set PYTHONPATH=%cd%\examples\hubert;%PYTHONPATH%  # [win]
-  {% endif %}
     # skipping on osx-64 because of resource exhaustion
     - pytest -v {{ ignore_modules }} -k "not ({{ tests_to_skip }})" test/torchaudio_unittest   # [not (osx and x86_64)]
   requires:
@@ -159,14 +151,13 @@ test:
     - parameterized
     - scipy
     - numpy
-    - scikit-learn
     - pillow
     - expecttest
     - pysoundfile
 
 
 about:
-  home: https://pytorch.org/audio/stable/index.html
+  home: https://docs.pytorch.org/audio/stable/index.html
   summary: Torchaudio is a library for audio and signal processing with PyTorch.
   description: |
     The aim of torchaudio is to apply PyTorch to the audio domain. By supporting PyTorch, torchaudio follows the same
@@ -175,14 +166,19 @@ about:
     library and not a general signal processing library. The benefits of PyTorch can be seen in torchaudio through
     having all the computations be through PyTorch operations which makes it easy to use and feel like a natural
     extension.
-  license: BSD-2-Clause
-  license_file: LICENSE
-  license_family: BSD
-  doc_url: https://pytorch.org/audio/main/torchaudio.html
+  # cuda builds also compile the bundled NVIDIA cuctc decoder (BSD-2, cutlass-derived BSD-3, bitonic_topk Apache-2.0)
+  # BSD-3 text: ctc_prefix_decoder_kernel_v2.cu's NVIDIA header (the cutlass-derived ctc_fast_divmod.cuh ships no notice)
+  license: {{ license }}
+  license_file:
+    - LICENSE
+    - third_party/LICENSES_BUNDLED.txt                   # [gpu_variant == "cuda"]
+    - src/libtorchaudio/cuctc/LICENSE                    # [gpu_variant == "cuda"]
+    - src/libtorchaudio/cuctc/src/bitonic_topk/LICENSE   # [gpu_variant == "cuda"]
+    - src/libtorchaudio/cuctc/src/ctc_prefix_decoder_kernel_v2.cu  # [gpu_variant == "cuda"]
+  license_family: {{ "Other" if gpu_variant == "cuda" else "BSD" }}
+  doc_url: https://docs.pytorch.org/audio/main/torchaudio.html
   dev_url: https://github.com/pytorch/audio
 
 extra:
   recipe-maintainers:
     - boldorider4
-  skip-lints:
-    - cbc_dep_in_run_missing_from_host
